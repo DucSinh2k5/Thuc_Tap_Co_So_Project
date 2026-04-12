@@ -45,6 +45,7 @@ def eda_before(df, output = "../Quan_sat/eda_before.txt"):
         f.write(report)
     print(report)
 
+
 if __name__ == "__main__":
     df = load_data("../Datasets/Used_Car_Dataset.csv")
     df = eda_before(df)

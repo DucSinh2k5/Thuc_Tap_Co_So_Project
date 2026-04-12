@@ -18,9 +18,10 @@ def chuan_bi_feature(df):
             feature_khong_chon.append(col)
     return features
 
+
 def tien_xu_ly(num,cat):
     transformers = []
-
+ 
     if num:
         num_pipeline = Pipeline([
             ("imputer", SimpleImputer(strategy="median")),

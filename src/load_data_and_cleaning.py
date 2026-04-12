@@ -79,6 +79,7 @@ def chuyen_cot_sang_so(df):
         df["So_cho_ngoi"] = pd.to_numeric(df["So_cho_ngoi"],errors='coerce').astype('Int64')
     return df
 
+
 def chuyen_cot_sang_category(df):
     if "Loai_bao_hiem" in df.columns:
         df["Loai_bao_hiem"] = df["Loai_bao_hiem"].map({

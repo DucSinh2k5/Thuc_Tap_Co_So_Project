@@ -267,6 +267,7 @@ def eda_after(df, target="Gia_theo_lakh", output_dir="../Quan_sat/eda_plots"):
                 plt.savefig(f"{output_dir}/04_cat_{fname}.png", dpi=100)
                 plt.show()
 
+
     # ─────────────────────────────────────────────────────────
     # 5. MA TRẬN TƯƠNG QUAN PEARSON
     # ─────────────────────────────────────────────────────────

@@ -107,6 +107,7 @@ def gioi_han_hang_xe(df, top_brands=None, top_n=15):
     return df, top_brands
 
 
+
 def xu_ly_outlier(df, bounds=None):
     """
     bounds=None   → chế độ fit (train): tính ngưỡng IQR từ df, trả về dict bounds.

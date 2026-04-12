@@ -240,7 +240,8 @@ def kiem_tra_overfit(X_train, y_train, selected_indices, k=5):
     print("-" * 90)
     print(f"{'Ket luan':<32} {ket_luan(rf_gap):>13} {ket_luan(lr_gap):>17} {ket_luan(xgb_gap):>10}")
     print(sep + "\n")
-
+ 
+ 
 
 #luu mo hinh
 def save(df, preprocessor, rf, lr, scaler, xgb, candidate_features, selected_features, selected_indices):

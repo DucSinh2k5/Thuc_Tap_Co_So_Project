@@ -138,6 +138,7 @@ def main():
     # best_rf_params = tim_tham_so_rf(X_tr_trans, y_tr, selected_indices, n_iter=30, k=5)
     rf, lr, scaler, xgb = train_model(X_tr_trans, y_tr, selected_indices)
 
+
     # 13. Đánh giá trên validation set
     evaluate_model(rf, lr, scaler, xgb, X_val_trans, y_val, selected_indices)
 
