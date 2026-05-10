@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from load_data_and_cleaning import load_data
-def eda_before(df, output = "../Quan_sat/eda_before.txt"):
+def eda_before(df, output = r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Quan_sat\eda_before.txt"):
     lines = []
     sep = "=" * 60
 
@@ -47,5 +47,5 @@ def eda_before(df, output = "../Quan_sat/eda_before.txt"):
 
 
 if __name__ == "__main__":
-    df = load_data("../Datasets/Used_Car_Dataset.csv")
+    df = load_data(r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Datasets\train-dataset.csv")
     df = eda_before(df)

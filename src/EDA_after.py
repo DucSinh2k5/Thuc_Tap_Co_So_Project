@@ -6,7 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import re
-def eda_after(df, target="Gia_theo_lakh", output_dir="../Quan_sat/eda_plots"):
+def eda_after(df, target="Gia_theo_lakh", output_dir=r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Quan_sat\eda_plots"):
     """
     EDA rút gọn – 5 biểu đồ quan trọng nhất, lưu toàn bộ vào output_dir.
       1. Phân phối target (Histogram+KDE + Boxplot)

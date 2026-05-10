@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 import joblib
@@ -7,7 +8,33 @@ from EDA_after import eda_after
 from EDA_before import eda_before
 from preprocessing import tien_xu_ly
 from feature_engineering import gioi_han_xe, gioi_han_hang_xe, tao_moi_feature, xu_ly_gia_tri_thieu, xu_ly_outlier
-from train_and_evaluate import evaluate_model, save, train_model, tinh_metrics, kiem_tra_overfit
+from train_and_evaluate import (
+    evaluate_model,
+    save,
+    train_model,
+    tinh_metrics,
+    kiem_tra_overfit,
+    run_baseline,
+    feature_importance_report,
+    benchmark_models,
+    run_learning_curve_report,
+    tim_tham_so_rf,
+)
+
+
+REPORT_DIR = r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Quan_sat"
+
+# Pipeline options (set to True when you want to run the step)
+RUN_BASELINE = True
+RUN_FEATURE_IMPORTANCE = True
+RUN_BENCHMARK = False
+RUN_LEARNING_CURVE = False
+RUN_TUNING = False
+USE_XGB_EARLY_STOPPING = True
+EARLY_STOPPING_ROUNDS = 50
+
+BENCHMARK_SEEDS = [42, 52, 62]
+BENCHMARK_K = 5
 
 
 def clean_pipeline(df):
@@ -33,10 +60,11 @@ def main():
     print("\n" + "=" * 60)
     print("DỰ ĐOÁN GIÁ XE Ô TÔ CŨ - MACHINE LEARNING")
     print("=" * 60 + "\n")
+    os.makedirs(REPORT_DIR, exist_ok=True)
 
     # 1. Load
-    df_train = load_data("../Datasets/train-data.csv")
-    df_test  = load_data("../Datasets/test-data.csv")
+    df_train = load_data(r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Datasets\train-dataset.csv")
+    df_test  = load_data(r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Datasets\test-dataset.csv")
 
     # 2. Làm sạch
     eda_before(df_train)
@@ -73,7 +101,7 @@ def main():
     df_tr,  bounds = xu_ly_outlier(df_tr)
     df_val, _      = xu_ly_outlier(df_val, bounds=bounds)
     df_test, _     = xu_ly_outlier(df_test, bounds=bounds)
-    df_tr.to_csv("../Datasets/train_cleaned.csv", index=False)
+    df_tr.to_csv(r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Datasets\train_cleaned.csv", index=False)
     print("✓ Đã lưu bản train đã cleaning: ../Datasets/train_cleaned.csv")
     # 7.5. Lưu bản train đã cleaning/feature engineering để app dùng lại
     export_cleaned_dataset(
@@ -83,7 +111,7 @@ def main():
         top_names=top_names,
         top_brands=top_brands,
         bounds=bounds,
-        output_path="../Datasets/test.csv",
+        output_path=r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Datasets\test.csv",
     )
 
     # 8. EDA — chỉ trên train
@@ -103,6 +131,7 @@ def main():
         df_val = df_val[df_val[target_col].notna()].reset_index(drop=True)
         print(f"Da loai bo dong thieu target: train {before_tr}->{len(df_tr)}, val {before_val}->{len(df_val)}")
 
+
     numeric_features = [c for c in candidate_features if pd.api.types.is_numeric_dtype(df_tr[c])]
     categorical_features = [c for c in candidate_features if c not in numeric_features]
 
@@ -115,6 +144,10 @@ def main():
     y_tr  = df_tr[target_col].values
     X_val = df_val[candidate_features]
     y_val = df_val[target_col].values
+
+    if RUN_BASELINE:
+        baseline_path = os.path.join(REPORT_DIR, "baseline_report.txt")
+        run_baseline(y_tr, y_val, output_path=baseline_path)
 
     # Đảm bảo test có đủ cột (điền NaN nếu thiếu)
     for col in candidate_features:
@@ -134,9 +167,42 @@ def main():
     selected_indices = list(range(len(feature_names)))
     print(f"Using all features ({len(selected_features)}): {selected_features}")
 
+    if RUN_BENCHMARK:
+        benchmark_path = os.path.join(REPORT_DIR, "benchmark_report.txt")
+        benchmark_models(
+            X_tr_trans,
+            y_tr,
+            selected_indices,
+            seeds=BENCHMARK_SEEDS,
+            k=BENCHMARK_K,
+            output_path=benchmark_path,
+        )
+
+    if RUN_LEARNING_CURVE:
+        lc_path = os.path.join(REPORT_DIR, "learning_curve_report.txt")
+        run_learning_curve_report(
+            X_tr_trans[:, selected_indices],
+            y_tr,
+            output_path=lc_path,
+        )
+
     # 12. Tìm tham số tối ưu cho RF rồi train
-    # best_rf_params = tim_tham_so_rf(X_tr_trans, y_tr, selected_indices, n_iter=30, k=5)
-    rf, lr, scaler, xgb = train_model(X_tr_trans, y_tr, selected_indices)
+    rf_params = None
+    if RUN_TUNING:
+        rf_params = tim_tham_so_rf(X_tr_trans, y_tr, selected_indices, n_iter=30, k=5)
+
+    eval_set = None
+    if USE_XGB_EARLY_STOPPING:
+        eval_set = [(X_val_trans[:, selected_indices], y_val)]
+
+    rf, lr, scaler, xgb = train_model(
+        X_tr_trans,
+        y_tr,
+        selected_indices,
+        rf_params=rf_params,
+        eval_set=eval_set,
+        early_stopping_rounds=EARLY_STOPPING_ROUNDS,
+    )
 
 
     # 13. Đánh giá trên validation set
@@ -144,6 +210,16 @@ def main():
 
     # 13.5. Cross-Validation — kiểm tra overfitting
     kiem_tra_overfit(X_tr_trans, y_tr, selected_indices, k=5)
+
+    if RUN_FEATURE_IMPORTANCE:
+        feature_importance_report(
+            rf,
+            xgb,
+            X_val_trans[:, selected_indices],
+            y_val,
+            selected_features,
+            output_dir=REPORT_DIR,
+        )
 
     # 14. Dự đoán trên test set và in kết quả
     X_sel    = X_test_trans[:, selected_indices]

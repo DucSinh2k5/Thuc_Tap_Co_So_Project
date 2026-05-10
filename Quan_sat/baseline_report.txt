@@ -1,0 +1,4 @@
+BASELINE REPORT
+------------------------------------------------------------
+Mean baseline      RMSE=5.7028 | MAE=4.6119 | R2=-0.0044
+Median baseline    RMSE=5.9453 | MAE=4.0818 | R2=-0.0916

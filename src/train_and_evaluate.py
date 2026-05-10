@@ -1,97 +1,147 @@
+import os
+import inspect
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import KFold, RandomizedSearchCV
+from sklearn.model_selection import KFold, RandomizedSearchCV, learning_curve
+from sklearn.inspection import permutation_importance
 from xgboost import XGBRegressor
 import joblib
 
 
-# def tim_tham_so_rf(X_train, y_train, selected_indices, n_iter=30, k=5):
-#     """
-#     Dùng RandomizedSearchCV để tìm bộ tham số tốt nhất cho Random Forest.
-#     n_iter : số tổ hợp thử ngẫu nhiên (càng cao càng chính xác, càng chậm)
-#     k      : số fold cross-validation
-#     """
-#     X_sel = X_train[:, selected_indices]
+def tim_tham_so_rf(X_train, y_train, selected_indices, n_iter=30, k=5):
+    """
+    RandomizedSearchCV để tìm tham số tốt nhất cho Random Forest.
+    n_iter : số tổ hợp thử ngẫu nhiên
+    k      : số fold cross-validation
+    """
+    X_sel = X_train[:, selected_indices]
 
-#     param_dist = {
-#         "n_estimators":     [100, 200, 300, 500],
-#         "max_depth":        [6, 8, 10, 12, 15, None],
-#         "min_samples_leaf": [2, 3, 5, 8, 10],
-#         "min_samples_split":[5, 10, 15, 20],
-#         "max_features":     [0.4, 0.5, 0.6, 0.7, "sqrt"],
-#         "max_samples":      [0.7, 0.8, 0.9, None],
-#     }
+    param_dist = {
+        "n_estimators":     [100, 200, 300, 500],
+        "max_depth":        [6, 8, 10, 12, 15, None],
+        "min_samples_leaf": [2, 3, 5, 8, 10],
+        "min_samples_split": [5, 10, 15, 20],
+        "max_features":     [0.4, 0.5, 0.6, 0.7, "sqrt"],
+        "max_samples":      [0.7, 0.8, 0.9, None],
+    }
 
-#     search = RandomizedSearchCV(
-#         RandomForestRegressor(random_state=42, n_jobs=-1),
-#         param_distributions=param_dist,
-#         n_iter=n_iter,
-#         scoring="r2",
-#         cv=KFold(n_splits=k, shuffle=True, random_state=42),
-#         random_state=42,
-#         n_jobs=-1,
-#         verbose=0,
-#         refit=True,
-#     )
-#     print(f"Dang tim tham so RF ({n_iter} to hop x {k}-fold CV)...")
-#     search.fit(X_sel, y_train)
+    search = RandomizedSearchCV(
+        RandomForestRegressor(random_state=42, n_jobs=-1),
+        param_distributions=param_dist,
+        n_iter=n_iter,
+        scoring="r2",
+        cv=KFold(n_splits=k, shuffle=True, random_state=42),
+        random_state=42,
+        n_jobs=-1,
+        verbose=0,
+        refit=True,
+    )
+    print(f"Dang tim tham so RF ({n_iter} to hop x {k}-fold CV)...")
+    search.fit(X_sel, y_train)
 
-#     best = search.best_params_
-#     sep = "=" * 60
-#     print(sep)
-#     print("KET QUA RANDOMIZED SEARCH — THAM SO TOI UU RF")
-#     print(sep)
-#     for k_name, v in best.items():
-#         print(f"  {k_name:<22}: {v}")
-#     print(f"  {'R2 CV tot nhat':<22}: {search.best_score_:.4f}")
-#     print(sep + "\n")
-#     return best
+    best = search.best_params_
+    sep = "=" * 60
+    print(sep)
+    print("KET QUA RANDOMIZED SEARCH — THAM SO TOI UU RF")
+    print(sep)
+    for k_name, v in best.items():
+        print(f"  {k_name:<22}: {v}")
+    print(f"  {'R2 CV tot nhat':<22}: {search.best_score_:.4f}")
+    print(sep + "\n")
+    return best
 
 
-def train_model(X_train_clean, y_train, selected_indices, rf_params=None):
-    X_sel = X_train_clean[:, selected_indices]
-    base_params = dict(
+def _build_rf_params(rf_params=None, random_state=42):
+    params = dict(
         n_estimators=300,
         max_depth=12,
         min_samples_leaf=2,
         min_samples_split=5,
         max_features=0.5,
         max_samples=0.7,
-        random_state=42,
+        random_state=random_state,
         n_jobs=-1,
     )
-
     if rf_params:
-        base_params.update(rf_params)
-    #Random Forest
-    rf = RandomForestRegressor(**base_params)
+        params.update(rf_params)
+    return params
+
+
+def _build_xgb_params(xgb_params=None, random_state=42, use_early_stopping=False):
+    params = dict(
+        n_estimators=2000 if use_early_stopping else 500,
+        learning_rate=0.05,
+        max_depth=6,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=random_state,
+        n_jobs=-1,
+        verbosity=0,
+    )
+    if xgb_params:
+        params.update(xgb_params)
+    return params
+
+
+def _format_metrics(label, metrics):
+    rmse, mae, r2 = metrics
+    return f"{label:<18} RMSE={rmse:.4f} | MAE={mae:.4f} | R2={r2:.4f}"
+
+
+def train_model(
+    X_train_clean,
+    y_train,
+    selected_indices,
+    rf_params=None,
+    xgb_params=None,
+    eval_set=None,
+    early_stopping_rounds=50,
+):
+    X_sel = X_train_clean[:, selected_indices]
+
+    # Random Forest
+    rf = RandomForestRegressor(**_build_rf_params(rf_params))
     print("Dang train Random Forest...")
     rf.fit(X_sel, y_train)
     print("Da train xong voi Random Forest!")
-    #Linear Regression
+    # Linear Regression
     print("Dang train Linear Regression...")
     scaler = StandardScaler()
     X_sel_scaled = scaler.fit_transform(X_sel)
     lr = LinearRegression()
     lr.fit(X_sel_scaled, y_train)
     print("Da train xong voi Linear Regression!")
-    #XGBoost
+    # XGBoost
     print("Dang train XGBoost...")
-    xgb = XGBRegressor(
-        n_estimators=500,
-        learning_rate=0.05,
-        max_depth=6,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-        n_jobs=-1,
-        verbosity=0,
+    xgb_params_final = _build_xgb_params(
+        xgb_params,
+        use_early_stopping=eval_set is not None,
     )
-    xgb.fit(X_sel, y_train)
+    xgb = XGBRegressor(**xgb_params_final)
+    if eval_set is not None:
+        fit_sig = inspect.signature(xgb.fit)
+        if "early_stopping_rounds" in fit_sig.parameters:
+            xgb.fit(
+                X_sel,
+                y_train,
+                eval_set=eval_set,
+                early_stopping_rounds=early_stopping_rounds,
+                verbose=False,
+            )
+        else:
+            print("XGBoost: early_stopping_rounds not supported, training without early stopping.")
+            xgb.fit(
+                X_sel,
+                y_train,
+                eval_set=eval_set,
+                verbose=False,
+            )
+    else:
+        xgb.fit(X_sel, y_train)
     print("Da train xong voi XGBoost!")
 
     return rf, lr, scaler, xgb
@@ -122,6 +172,188 @@ def tinh_metrics(y_true, y_pred, n_features):
     # tol20    = np.mean(pct_err <= 0.20) * 100
 
     return rmse, mae, r2
+
+
+def run_baseline(y_train, y_val, output_path=None):
+    """Baseline mean/median predictor to compare against trained models."""
+    mean_pred = np.full_like(y_val, np.mean(y_train), dtype=float)
+    median_pred = np.full_like(y_val, np.median(y_train), dtype=float)
+
+    mean_metrics = tinh_metrics(y_val, mean_pred, 0)
+    median_metrics = tinh_metrics(y_val, median_pred, 0)
+
+    lines = []
+    lines.append("BASELINE REPORT")
+    lines.append("-" * 60)
+    lines.append(_format_metrics("Mean baseline", mean_metrics))
+    lines.append(_format_metrics("Median baseline", median_metrics))
+
+    report = "\n".join(lines)
+    print(report)
+    if output_path:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report + "\n")
+    return {
+        "mean": mean_metrics,
+        "median": median_metrics,
+    }
+
+
+def feature_importance_report(
+    rf,
+    xgb,
+    X_val,
+    y_val,
+    feature_names,
+    output_dir,
+    n_repeats=10,
+    random_state=42,
+):
+    os.makedirs(output_dir, exist_ok=True)
+    notes = []
+
+    if rf is not None and hasattr(rf, "feature_importances_"):
+        df_rf = pd.DataFrame({
+            "feature": feature_names,
+            "importance": rf.feature_importances_,
+        }).sort_values("importance", ascending=False)
+        path_rf = os.path.join(output_dir, "feature_importance_rf.csv")
+        df_rf.to_csv(path_rf, index=False)
+        notes.append(f"RF impurity importance -> {path_rf}")
+
+    if xgb is not None and hasattr(xgb, "feature_importances_"):
+        df_xgb = pd.DataFrame({
+            "feature": feature_names,
+            "importance": xgb.feature_importances_,
+        }).sort_values("importance", ascending=False)
+        path_xgb = os.path.join(output_dir, "feature_importance_xgb.csv")
+        df_xgb.to_csv(path_xgb, index=False)
+        notes.append(f"XGB impurity importance -> {path_xgb}")
+
+    for name, model in [("rf", rf), ("xgb", xgb)]:
+        if model is None:
+            continue
+        perm = permutation_importance(
+            model,
+            X_val,
+            y_val,
+            scoring="r2",
+            n_repeats=n_repeats,
+            random_state=random_state,
+            n_jobs=-1,
+        )
+        df_perm = pd.DataFrame({
+            "feature": feature_names,
+            "importance_mean": perm.importances_mean,
+            "importance_std": perm.importances_std,
+        }).sort_values("importance_mean", ascending=False)
+        path_perm = os.path.join(output_dir, f"permutation_importance_{name}.csv")
+        df_perm.to_csv(path_perm, index=False)
+        notes.append(f"Permutation importance ({name}) -> {path_perm}")
+
+    if notes:
+        print("Feature importance reports:")
+        for line in notes:
+            print(f"- {line}")
+    return notes
+
+
+def benchmark_models(
+    X,
+    y,
+    selected_indices,
+    seeds=None,
+    k=5,
+    rf_params=None,
+    xgb_params=None,
+    output_path=None,
+):
+    if seeds is None:
+        seeds = [42, 52, 62]
+
+    X_sel = X[:, selected_indices]
+    results = {
+        "Random Forest": [],
+        "Linear Regression": [],
+        "XGBoost": [],
+    }
+
+    for seed in seeds:
+        kf = KFold(n_splits=k, shuffle=True, random_state=seed)
+        for tr_idx, val_idx in kf.split(X_sel):
+            Xtr, Xval = X_sel[tr_idx], X_sel[val_idx]
+            ytr, yval = y[tr_idx], y[val_idx]
+
+            rf = RandomForestRegressor(**_build_rf_params(rf_params, random_state=seed))
+            rf.fit(Xtr, ytr)
+            results["Random Forest"].append(tinh_metrics(yval, rf.predict(Xval), Xtr.shape[1]))
+
+            sc = StandardScaler()
+            lr = LinearRegression()
+            lr.fit(sc.fit_transform(Xtr), ytr)
+            lr_pred = lr.predict(sc.transform(Xval))
+            results["Linear Regression"].append(tinh_metrics(yval, lr_pred, Xtr.shape[1]))
+
+            xgb = XGBRegressor(**_build_xgb_params(xgb_params, random_state=seed))
+            xgb.fit(Xtr, ytr)
+            results["XGBoost"].append(tinh_metrics(yval, xgb.predict(Xval), Xtr.shape[1]))
+
+    lines = []
+    lines.append("BENCHMARK REPORT")
+    lines.append(f"Seeds={seeds}, KFold={k}")
+    lines.append("-" * 70)
+    for model_name, rows in results.items():
+        arr = np.array(rows)
+        mean = arr.mean(axis=0)
+        std = arr.std(axis=0)
+        lines.append(
+            f"{model_name:<18} RMSE={mean[0]:.4f}±{std[0]:.4f} | "
+            f"MAE={mean[1]:.4f}±{std[1]:.4f} | R2={mean[2]:.4f}±{std[2]:.4f}"
+        )
+
+    report = "\n".join(lines)
+    print(report)
+    if output_path:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report + "\n")
+    return results
+
+
+def run_learning_curve_report(X, y, rf_params=None, cv=5, output_path=None):
+    rf = RandomForestRegressor(**_build_rf_params(rf_params))
+    train_sizes = np.linspace(0.1, 1.0, 5)
+    sizes, train_scores, val_scores = learning_curve(
+        rf,
+        X,
+        y,
+        train_sizes=train_sizes,
+        cv=cv,
+        scoring="r2",
+        n_jobs=-1,
+        shuffle=True,
+        random_state=42,
+    )
+
+    lines = []
+    lines.append("LEARNING CURVE REPORT (RF, R2)")
+    lines.append("-" * 60)
+    for i, size in enumerate(sizes):
+        tr_mean = train_scores[i].mean()
+        tr_std = train_scores[i].std()
+        va_mean = val_scores[i].mean()
+        va_std = val_scores[i].std()
+        lines.append(
+            f"Train size={int(size):>5} | "
+            f"Train R2={tr_mean:.4f}±{tr_std:.4f} | "
+            f"Val R2={va_mean:.4f}±{va_std:.4f}"
+        )
+
+    report = "\n".join(lines)
+    print(report)
+    if output_path:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report + "\n")
+    return sizes, train_scores, val_scores
 
 
 # danh gia + tim mo hinh tot hon
@@ -262,5 +494,5 @@ def save(df, preprocessor, rf, lr, scaler, xgb, candidate_features, selected_fea
         "selected_indices": selected_indices,
         "selected_features": selected_features,
     }
-    joblib.dump(model,"../Models/model2.pkl")
-    print("Da luu model: model2.pkl")
+    joblib.dump(model,r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Models\model.pkl")
+    print("Da luu model: model.pkl")

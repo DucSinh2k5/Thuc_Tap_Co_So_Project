@@ -1,0 +1,12 @@
+Update notes (May 10, 2026)
+
+1) Thuc_Tap_Co_So_Project/src/train_and_evaluate.py
+- Enabled RF hyperparameter tuning function (tim_tham_so_rf).
+- Added shared parameter builders for RF/XGB and a small metrics formatter.
+- Updated train_model to support XGBoost early stopping with eval_set.
+- Added baseline report, feature importance report (impurity + permutation), benchmark report, and learning curve report helpers.
+
+2) Thuc_Tap_Co_So_Project/src/main.py
+- Added pipeline toggles (baseline, benchmark, learning curve, tuning, early stopping) and report output directory.
+- Added calls to baseline/benchmark/learning-curve steps and feature-importance export.
+- Wired early-stopping eval_set into XGBoost training and optional RF tuning.
