@@ -8,14 +8,14 @@ from torchvision.models import ResNet18_Weights
 
 CAC_MUC_DO = ["minor", "moderate", "severe"]
 DIEM_MUC_DO = {"minor": 1, "moderate": 2, "severe": 3}
-DUONG_DAN_MO_HINH = Path(__file__).resolve().parents[1] / "Models" / "cnn_car.pkl"
+DUONG_DAN_MO_HINH = r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Models\cnn_car.pkl"
 THIET_BI = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BIEN_DOI_DANH_GIA = ResNet18_Weights.DEFAULT.transforms()
 
 
 @lru_cache(maxsize=1)
 def _tai_mo_hinh_muc_do():
-    if not DUONG_DAN_MO_HINH.exists():
+    if not Path(DUONG_DAN_MO_HINH).exists():
         raise FileNotFoundError(f"Missing severity model at {DUONG_DAN_MO_HINH}")
     try:
         doi_tuong_tai = torch.load(DUONG_DAN_MO_HINH, map_location=THIET_BI)
