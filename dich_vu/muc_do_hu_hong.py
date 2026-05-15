@@ -1,5 +1,4 @@
 from functools import lru_cache
-from pathlib import Path
 
 from PIL import Image
 import torch
@@ -15,16 +14,11 @@ BIEN_DOI_DANH_GIA = ResNet18_Weights.DEFAULT.transforms()
 
 @lru_cache(maxsize=1)
 def _tai_mo_hinh_muc_do():
-    if not Path(DUONG_DAN_MO_HINH).exists():
-        raise FileNotFoundError(f"Missing severity model at {DUONG_DAN_MO_HINH}")
-    try:
-        doi_tuong_tai = torch.load(DUONG_DAN_MO_HINH, map_location=THIET_BI)
-    except Exception:
-        doi_tuong_tai = None
+    doi_tuong_tai = torch.load(DUONG_DAN_MO_HINH, map_location=THIET_BI)
 
     if isinstance(doi_tuong_tai, torch.nn.Module):
         mo_hinh = doi_tuong_tai
-    elif isinstance(doi_tuong_tai, dict):
+    else:
         trang_thai = (
             doi_tuong_tai.get("model_state_dict")
             or doi_tuong_tai.get("state_dict")
@@ -33,13 +27,6 @@ def _tai_mo_hinh_muc_do():
         mo_hinh = models.resnet18(weights=None)
         mo_hinh.fc = torch.nn.Linear(mo_hinh.fc.in_features, len(CAC_MUC_DO))
         mo_hinh.load_state_dict(trang_thai, strict=True)
-    else:
-        try:
-            mo_hinh = torch.jit.load(str(DUONG_DAN_MO_HINH), map_location=THIET_BI)
-        except Exception as exc:
-            raise RuntimeError(
-                "Không thể tải cnn_car.pkl bằng torch. Hãy export torchscript hoặc lưu state_dict."
-            ) from exc
 
     mo_hinh.to(THIET_BI)
     mo_hinh.eval()
@@ -82,9 +69,6 @@ def _du_doan_nhan(mo_hinh, batch):
     if isinstance(dau_ra, dict):
         dau_ra = dau_ra.get("logits") or dau_ra.get("output") or next(iter(dau_ra.values()))
 
-    if not isinstance(dau_ra, torch.Tensor):
-        raise RuntimeError("Đầu ra mô hình mức độ không phải tensor.")
-
     chi_so = torch.argmax(dau_ra, dim=1).detach().cpu().tolist()
     return [CAC_MUC_DO[int(idx)] for idx in chi_so]
 
@@ -93,9 +77,6 @@ def phan_loai_muc_do(danh_sach_phat_hien, danh_sach_anh=None):
     """Dự đoán mức độ hư hỏng bằng mô hình cnn_car.pkl."""
     if not danh_sach_phat_hien:
         return []
-
-    if not danh_sach_anh:
-        raise RuntimeError("Mô hình mức độ cần ảnh để cắt theo bbox.")
 
     mo_hinh = _tai_mo_hinh_muc_do()
     ban_do_anh = {item["name"]: item["image"] for item in danh_sach_anh}

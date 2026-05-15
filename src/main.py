@@ -122,7 +122,8 @@ def main():
     excluded_cols = ["Gia_theo_lakh", "Gia_moi_lakh", "Unnamed: 0", "Nam_san_xuat", "Quang_duong_da_di(km)", "Ten_xe"]
     candidate_features = [c for c in df_tr.columns if c not in excluded_cols]
     if not candidate_features:
-        raise ValueError("Khong tim thay cot feature trong train")
+        print("Khong tim thay cot feature trong train")
+        return
 
     # Loại dòng thiếu target để tránh NaN khi huấn luyện
     if df_tr[target_col].isna().any() or df_val[target_col].isna().any():

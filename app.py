@@ -81,10 +81,9 @@ TRANSMISSION_MAP = {
 
 
 def _to_float_or_nan(value):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
+    if value is None or value == "":
         return float("nan")
+    return float(value)
 
 
 def chuan_hoa_thong_tin_xe(thong_tin_xe):
@@ -160,12 +159,8 @@ def chay_ung_dung():
             for thong_bao in canh_bao:
                 st.warning(thong_bao)
         else:
-            try:
-                with st.spinner("Running prediction pipeline..."):
-                    ket_qua = chay_pipeline(thong_tin_xe, danh_sach_anh)
-            except Exception as exc:
-                st.error(f"Prediction failed: {exc}")
-                st.stop()
+            with st.spinner("Running prediction pipeline..."):
+                ket_qua = chay_pipeline(thong_tin_xe, danh_sach_anh)
             st.session_state["ket_qua_cuoi"] = ket_qua
             st.success("Prediction complete.")
 

@@ -9,10 +9,9 @@ from tien_ich.dinh_dang import dinh_dang_phan_tram, dinh_dang_vnd
 
 
 def _chi_so_an_toan(lua_chon, gia_tri):
-    try:
+    if gia_tri in lua_chon:
         return lua_chon.index(gia_tri)
-    except ValueError:
-        return 0
+    return 0
 
 
 def hien_form_thong_tin_xe(
@@ -129,11 +128,8 @@ def doc_anh_da_tai(tep_da_tai):
     """Đọc các ảnh đã tải và trả về danh sách dict (tên, ảnh)."""
     danh_sach_anh = []
     for tep in tep_da_tai:
-        try:
-            tep.seek(0)
-            anh = Image.open(tep).convert("RGB")
-        except Exception:
-            continue
+        tep.seek(0)
+        anh = Image.open(tep).convert("RGB")
         danh_sach_anh.append({"name": tep.name, "image": anh})
     return danh_sach_anh
 

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from ultralytics import YOLO
 
 DUONG_DAN_MO_HINH = Path(__file__).resolve().parents[1] / "Models" / "best_100_800sz.pt"
 KICH_THUOC_ANH_YOLO = 800
@@ -38,14 +39,6 @@ def chuan_hoa_ten_lop(ten_lop):
 
 @lru_cache(maxsize=1)
 def _tai_mo_hinh_yolo():
-    if not DUONG_DAN_MO_HINH.exists():
-        raise FileNotFoundError(f"Missing YOLO model at {DUONG_DAN_MO_HINH}")
-    try:
-        from ultralytics import YOLO
-    except Exception as exc:
-        raise RuntimeError(
-            "Ultralytics là bắt buộc để phát hiện hư hỏng. Cài bằng 'pip install ultralytics'."
-        ) from exc
     return YOLO(str(DUONG_DAN_MO_HINH))
 
 
@@ -110,11 +103,7 @@ def phat_hien_hu_hong(danh_sach_anh):
 def ve_bbox_anh(danh_sach_anh, danh_sach_phat_hien):
     """Vẽ bounding box lên ảnh để hiển thị."""
     anh_da_ve = {}
-
-    try:
-        font = ImageFont.truetype("DejaVuSans.ttf", CO_CHU_NHAN)
-    except Exception:
-        font = ImageFont.load_default()
+    font = ImageFont.load_default()
 
     for muc_anh in danh_sach_anh:
         anh = muc_anh["image"].copy()

@@ -1,42 +1,7 @@
 import joblib
 import pandas as pd
-import requests
-import xml.etree.ElementTree as ET
 
-TY_GIA_URL = "https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx"
-
-
-def _tai_ty_gia_inr_vnd():
-    response = requests.get(
-        TY_GIA_URL,
-        headers={"User-Agent": "Mozilla/5.0"},
-        timeout=10,
-    )
-    response.raise_for_status()
-    root = ET.fromstring(response.content)
-
-    for item in root.findall("Exrate"):
-        if item.attrib.get("CurrencyCode") == "INR":
-            ty_gia = (
-                item.attrib.get("Transfer")
-                or item.attrib.get("Sell")
-                or item.attrib.get("Buy")
-            )
-            if not ty_gia:
-                raise ValueError("Missing INR exchange rate in XML response.")
-            return float(ty_gia.replace(",", ""))
-
-    raise ValueError("INR not found in XML exchange rates.")
-
-
-def _lay_lakh_inr_sang_vnd():
-    return _tai_ty_gia_inr_vnd() * 100_000
-
-
-try:
-    LAKH_INR_SANG_VND = _lay_lakh_inr_sang_vnd()
-except Exception:
-    LAKH_INR_SANG_VND = 30_000_000
+LAKH_INR_SANG_VND = 30_000_000
 
 TRONG_SO_LOP = {
     "dent": 1.0,
@@ -56,9 +21,9 @@ def _tao_du_lieu_du_doan(thong_tin_xe, mo_hinh):
         du_lieu = pd.DataFrame([thong_tin_xe])
 
     cot_dau_vao = mo_hinh["candidate_features"]
-    thieu_cot = [cot for cot in cot_dau_vao if cot not in du_lieu.columns]
-    if thieu_cot:
-        raise ValueError(f"Input is missing required features: {thieu_cot}")
+    for cot in cot_dau_vao:
+        if cot not in du_lieu.columns:
+            du_lieu[cot] = float("nan")
     return du_lieu[cot_dau_vao]
 
 
