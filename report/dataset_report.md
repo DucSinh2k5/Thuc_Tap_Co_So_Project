@@ -116,6 +116,18 @@ Dữ liệu trong `coco_damage_car_yolov8/` được dùng để huấn luyện 
 
 Các kết quả này đóng vai trò là nguồn feature thị giác cho bước điều chỉnh giá.
 
+#### Lý do chọn mô hình `yolov8_s100_800`
+
+Trong các mô hình YOLO đã thử nghiệm, dự án lựa chọn checkpoint `yolov8_s100_800` làm mô hình phát hiện hư hỏng chính. Tên checkpoint này thể hiện cấu hình huấn luyện chính: sử dụng biến thể **YOLOv8s**, huấn luyện trong **100 epoch**, với kích thước ảnh đầu vào **800 px**. Đây là cấu hình được chọn vì phù hợp nhất với mục tiêu của dự án: phát hiện tương đối chính xác các vùng hư hỏng ngoại thất nhưng vẫn đủ nhẹ để tích hợp vào ứng dụng demo.
+
+Lý do đầu tiên là **YOLOv8s có mức cân bằng tốt giữa độ chính xác và tốc độ suy luận**. So với YOLOv8n, mô hình YOLOv8s có số tham số lớn hơn nên khả năng học đặc trưng hư hỏng tốt hơn, đặc biệt với các vùng khó như vết xước, vết nứt hoặc vết móp nhỏ. Trong khi đó, so với YOLOv8m, YOLOv8s nhẹ hơn đáng kể, tốc độ suy luận nhanh hơn và phù hợp hơn với hệ thống demo chạy trên máy cá nhân hoặc môi trường Streamlit.
+
+Lý do thứ hai là cấu hình **100 epoch** giúp mô hình có đủ thời gian học các đặc trưng của bộ dữ liệu damage detection mà không cần tăng số epoch quá cao. Với bài toán phát hiện hư hỏng xe, các đặc trưng thị giác có thể khá nhỏ, mảnh và dễ nhầm với phản sáng, đường gân thân xe hoặc vết bẩn. Vì vậy, việc huấn luyện đủ lâu giúp mô hình ổn định hơn so với các run ngắn, đồng thời vẫn tránh làm quá nặng quá trình huấn luyện.
+
+Lý do thứ ba là kích thước ảnh **800 px** được chọn để giữ lại nhiều chi tiết hơn trên ảnh xe. Các hư hỏng như `scratch`, `crack` hoặc `dent` thường có diện tích nhỏ, nếu ảnh đầu vào quá thấp thì các vùng này dễ bị mất chi tiết sau khi resize. Việc tăng kích thước ảnh lên 800 px giúp mô hình quan sát rõ hơn các vùng hỏng nhỏ, từ đó hỗ trợ tốt hơn cho bước phát hiện bounding box và bước phân loại mức độ hư hỏng phía sau.
+
+Ngoài ra, trong quá trình thử nghiệm, dự án cũng đã đánh giá việc bổ sung thêm dữ liệu cho các lớp khó như `dent`, `scratch`, `crack`. Tuy nhiên, các lần mở rộng dữ liệu này chưa tạo ra cải thiện ổn định so với baseline tốt nhất. Vì vậy, checkpoint `yolov8_s100_800` được giữ lại làm mô hình chính vì cho kết quả tổng thể ổn định hơn, dễ tích hợp hơn và phù hợp với pipeline hiện tại gồm: phát hiện hư hỏng bằng YOLO, phân loại mức độ bằng CNN và điều chỉnh giá xe bằng rule-based adjustment.
+
 ### 4.3. Nhánh severity classification
 
 Dữ liệu trong `car_damage_severity/` được dùng để huấn luyện mô hình **CNN** nhằm phân loại mức độ nghiêm trọng của vùng hư hỏng thành ba mức:
