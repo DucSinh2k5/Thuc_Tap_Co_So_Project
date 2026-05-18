@@ -44,11 +44,11 @@ def _du_doan_lakh(mo_hinh, du_lieu):
 
 
 def du_doan_gia_co_ban(thong_tin_xe):
-    """Dự đoán giá cơ bản bằng model tabular trong Models/model.pkl.
+    # Dự đoán giá cơ bản bằng model tabular trong Models/model.pkl.
 
-    thong_tin_xe phải chứa các feature đã được chuẩn hóa giống pipeline huấn luyện.
-    Input must already be formatted; no cleaning is applied here.
-    """
+    # thong_tin_xe phải chứa các feature đã được chuẩn hóa giống pipeline huấn luyện.
+    # Input must already be formatted; no cleaning is applied here.
+    
     du_lieu = _tao_du_lieu_du_doan(thong_tin_xe, mo_hinh)
     gia_lakh = _du_doan_lakh(mo_hinh, du_lieu)
     gia_vnd = gia_lakh * LAKH_INR_SANG_VND
@@ -60,7 +60,7 @@ def tinh_dieu_chinh_gia(
     danh_sach_phat_hien,
     danh_sach_muc_do,
 ):
-    """Tính toán điều chỉnh giá dựa trên hư hỏng và mức độ."""
+    #Tính toán điều chỉnh giá dựa trên hư hỏng và mức độ.
     if not danh_sach_phat_hien:
         return {
             "base_price": gia_co_ban,

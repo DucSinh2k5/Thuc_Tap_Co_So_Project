@@ -74,7 +74,7 @@ def _du_doan_nhan(mo_hinh, batch):
 
 
 def phan_loai_muc_do(danh_sach_phat_hien, danh_sach_anh=None):
-    """Dự đoán mức độ hư hỏng bằng mô hình cnn_car.pkl."""
+    # """Dự đoán mức độ hư hỏng bằng mô hình cnn_car.pkl."""
     if not danh_sach_phat_hien:
         return []
 
@@ -98,7 +98,7 @@ def phan_loai_muc_do(danh_sach_phat_hien, danh_sach_anh=None):
 
 
 def ghep_chi_tiet_muc_do(danh_sach_phat_hien, danh_sach_muc_do):
-    """Gộp phát hiện và mức độ thành từng dòng chi tiết."""
+    # """Gộp phát hiện và mức độ thành từng dòng chi tiết."""
     ban_do_muc_do = {s["damage_id"]: s for s in danh_sach_muc_do}
     hang = []
 
@@ -120,7 +120,7 @@ def ghep_chi_tiet_muc_do(danh_sach_phat_hien, danh_sach_muc_do):
 
 
 def tong_hop_muc_do(danh_sach_phat_hien, danh_sach_muc_do):
-    """Tóm tắt kết quả mức độ để hiển thị."""
+    # """Tóm tắt kết quả mức độ để hiển thị."""
     tong_hop = {
         "total_damages": len(danh_sach_phat_hien),
         "num_dents": 0,

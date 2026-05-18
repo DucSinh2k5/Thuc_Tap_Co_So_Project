@@ -33,7 +33,7 @@ MAU_LOP = {
 
 
 def chuan_hoa_ten_lop(ten_lop):
-    """Chuẩn hóa tên lớp về dạng không dấu cách và chữ thường."""
+    # """Chuẩn hóa tên lớp về dạng không dấu cách và chữ thường."""
     return ten_lop.strip().lower().replace("-", "_").replace(" ", "_")
 
 
@@ -43,7 +43,7 @@ def _tai_mo_hinh_yolo():
 
 
 def phat_hien_hu_hong(danh_sach_anh):
-    """Chạy YOLOv8 và trả về danh sách hư hỏng đã phát hiện."""
+    # """Chạy YOLOv8 và trả về danh sách hư hỏng đã phát hiện."""
     if not danh_sach_anh:
         return []
 
@@ -101,7 +101,7 @@ def phat_hien_hu_hong(danh_sach_anh):
 
 
 def ve_bbox_anh(danh_sach_anh, danh_sach_phat_hien):
-    """Vẽ bounding box lên ảnh để hiển thị."""
+    # """Vẽ bounding box lên ảnh để hiển thị."""
     anh_da_ve = {}
     font = ImageFont.load_default()
 

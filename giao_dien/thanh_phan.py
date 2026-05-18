@@ -19,7 +19,7 @@ def hien_form_thong_tin_xe(
     loai_nhien_lieu,
     hop_so,
 ):
-    """Hiển thị form thông tin xe và trả về dữ liệu."""
+    # """Hiển thị form thông tin xe và trả về dữ liệu."""
     st.subheader("Car Information Form")
 
     cot1, cot2 = st.columns(2)
@@ -114,7 +114,7 @@ def hien_form_thong_tin_xe(
 
 
 def hien_tai_anh_len():
-    """Hiển thị khu vực tải ảnh và trả về danh sách tệp."""
+    # """Hiển thị khu vực tải ảnh và trả về danh sách tệp."""
     tep_da_tai = st.file_uploader(
         "Upload car images",
         type=["png", "jpg", "jpeg"],
@@ -125,7 +125,7 @@ def hien_tai_anh_len():
 
 
 def doc_anh_da_tai(tep_da_tai):
-    """Đọc các ảnh đã tải và trả về danh sách dict (tên, ảnh)."""
+    # """Đọc các ảnh đã tải và trả về danh sách dict (tên, ảnh)."""
     danh_sach_anh = []
     for tep in tep_da_tai:
         tep.seek(0)
@@ -135,7 +135,7 @@ def doc_anh_da_tai(tep_da_tai):
 
 
 def hien_xem_truoc_anh(danh_sach_anh):
-    """Hiển thị xem trước các ảnh đã tải."""
+    # """Hiển thị xem trước các ảnh đã tải."""
     if not danh_sach_anh:
         st.info("Upload images to see a preview.")
         return
@@ -155,7 +155,7 @@ def hien_ket_qua_phat_hien(
     danh_sach_phat_hien,
     anh_voi_bbox,
 ):
-    """Hiển thị ảnh gốc, ảnh bbox và bảng phát hiện hư hỏng."""
+    # """Hiển thị ảnh gốc, ảnh bbox và bảng phát hiện hư hỏng."""
     if not danh_sach_anh:
         st.info("No images to display.")
         return
@@ -196,7 +196,7 @@ def hien_ket_qua_phat_hien(
 
 
 def hien_ket_qua_muc_do(tong_hop_muc_do, bang_muc_do):
-    """Hiển thị tóm tắt mức độ và bảng chi tiết."""
+    # """Hiển thị tóm tắt mức độ và bảng chi tiết."""
     st.subheader("Severity Analysis")
 
     cot1, cot2, cot3, cot4 = st.columns(4)
@@ -230,7 +230,7 @@ def hien_ket_qua_muc_do(tong_hop_muc_do, bang_muc_do):
 
 
 def hien_ket_qua_gia(ket_qua_gia, tong_hop_muc_do):
-    """Hiển thị chỉ số giá và giải thích."""
+    # """Hiển thị chỉ số giá và giải thích."""
     cot1, cot2, cot3 = st.columns(3)
     cot1.metric("Base Price", dinh_dang_vnd(ket_qua_gia.get("base_price", 0.0)))
     cot2.metric("Damage Deduction", dinh_dang_vnd(ket_qua_gia.get("deduction_amount", 0.0)))
@@ -262,7 +262,7 @@ def hien_ket_qua_gia(ket_qua_gia, tong_hop_muc_do):
 
 
 def hien_bang_lich_su(lich_su):
-    """Hiển thị lịch sử dự đoán (không dùng hiện tại)."""
+    # """Hiển thị lịch sử dự đoán (không dùng hiện tại)."""
     if not lich_su:
         st.info("No history yet.")
         return
@@ -278,7 +278,7 @@ def hien_bang_lich_su(lich_su):
 
 
 def hien_nut_xuat(ket_qua_xuat, lich_su):
-    """Hiển thị nút xuất JSON/CSV (không dùng hiện tại)."""
+    # """Hiển thị nút xuất JSON/CSV (không dùng hiện tại)."""
     if not ket_qua_xuat and not lich_su:
         return
 
