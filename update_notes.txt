@@ -1,12 +1,10 @@
-Update notes (May 10, 2026)
-
 1) Thuc_Tap_Co_So_Project/src/train_and_evaluate.py
-- Enabled RF hyperparameter tuning function (tim_tham_so_rf).
-- Added shared parameter builders for RF/XGB and a small metrics formatter.
-- Updated train_model to support XGBoost early stopping with eval_set.
-- Added baseline report, feature importance report (impurity + permutation), benchmark report, and learning curve report helpers.
+Kích hoạt hàm tối ưu hóa siêu tham số cho Random Forest (tim_tham_so_rf).
+Thêm các hàm khởi tạo tham số dùng chung (shared parameter builders) cho RF/XGB và một hàm định dạng chỉ số đánh giá (metrics formatter) nhỏ.
+Cập nhật hàm train_model để hỗ trợ tính năng dừng sớm (early stopping) của XGBoost với eval_set.
+Thêm các hàm bổ trợ (helpers) để xuất báo cáo baseline, báo cáo độ quan trọng của đặc trưng (feature importance - bao gồm cả impurity và permutation), báo cáo benchmark, và báo cáo đường cong học tập (learning curve).
 
 2) Thuc_Tap_Co_So_Project/src/main.py
-- Added pipeline toggles (baseline, benchmark, learning curve, tuning, early stopping) and report output directory.
-- Added calls to baseline/benchmark/learning-curve steps and feature-importance export.
-- Wired early-stopping eval_set into XGBoost training and optional RF tuning.
+Thêm các nút bật/tắt cho pipeline (baseline, benchmark, learning curve, tuning, early stopping) và thư mục xuất báo cáo đầu ra.
+Thêm các lệnh gọi hàm cho các bước chạy baseline, benchmark, learning curve và xuất dữ liệu độ quan trọng của đặc trưng.
+Kết nối phần thiết lập eval_set của early-stopping vào quá trình huấn luyện XGBoost và phần tối ưu hóa RF (tùy chọn).
