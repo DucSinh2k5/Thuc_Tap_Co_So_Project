@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -7,11 +8,83 @@ from PIL import Image
 
 from tien_ich.dinh_dang import dinh_dang_phan_tram, dinh_dang_vnd
 
+DUONG_DAN_DATASET_XE = Path(__file__).resolve().parents[1] / "Datasets" / "train-dataset.csv"
+LUA_CHON_KHAC = "Other / nhập ngoài"
+
 
 def _chi_so_an_toan(lua_chon, gia_tri):
     if gia_tri in lua_chon:
         return lua_chon.index(gia_tri)
     return 0
+
+
+def _tach_hang_va_dong_xe(ten_xe):
+    ten_xe = str(ten_xe).strip()
+    phan = ten_xe.split()
+    if len(phan) >= 2 and f"{phan[0]} {phan[1]}".lower() == "land rover":
+        return "Land Rover", " ".join(phan[2:]) or ten_xe
+    if phan:
+        return phan[0], " ".join(phan[1:]) or ten_xe
+    return "Unknown", ten_xe
+
+
+@st.cache_data
+def _tai_danh_sach_hang_dong_xe():
+    df = pd.read_csv(DUONG_DAN_DATASET_XE, usecols=["Name"])
+    ban_do = {}
+    for ten_xe in df["Name"].dropna().astype(str):
+        hang, dong_xe = _tach_hang_va_dong_xe(ten_xe)
+        ban_do.setdefault(hang, set()).add(dong_xe)
+    return {hang: sorted(danh_sach) for hang, danh_sach in sorted(ban_do.items())}
+
+
+def _chon_hang_xe(cot, gia_tri_mac_dinh):
+    ban_do_hang = _tai_danh_sach_hang_dong_xe()
+    danh_sach_hang = list(ban_do_hang.keys()) + [LUA_CHON_KHAC]
+    hang_mac_dinh = gia_tri_mac_dinh.get("brand", "")
+    hang_index = _chi_so_an_toan(danh_sach_hang, hang_mac_dinh)
+    if hang_mac_dinh and hang_mac_dinh not in danh_sach_hang:
+        hang_index = len(danh_sach_hang) - 1
+
+    hang_da_chon = cot.selectbox(
+        "Brand",
+        options=danh_sach_hang,
+        index=hang_index,
+        key="brand_choice",
+    )
+    if hang_da_chon != LUA_CHON_KHAC:
+        return hang_da_chon, ban_do_hang
+
+    hang_tu_nhap = cot.text_input(
+        "Custom Brand",
+        value=hang_mac_dinh if hang_mac_dinh not in ban_do_hang else "",
+        key="brand_custom",
+    )
+    return hang_tu_nhap.strip(), ban_do_hang
+
+
+def _chon_dong_xe(cot, hang_xe, ban_do_hang, gia_tri_mac_dinh):
+    danh_sach_dong_xe = ban_do_hang.get(hang_xe, [])
+    dong_mac_dinh = gia_tri_mac_dinh.get("model", "")
+
+    if not danh_sach_dong_xe:
+        return cot.text_input("Model", value=dong_mac_dinh, key="model_custom").strip()
+
+    lua_chon_dong_xe = danh_sach_dong_xe + [LUA_CHON_KHAC]
+    dong_index = _chi_so_an_toan(lua_chon_dong_xe, dong_mac_dinh)
+    if dong_mac_dinh and dong_mac_dinh not in lua_chon_dong_xe:
+        dong_index = len(lua_chon_dong_xe) - 1
+
+    dong_da_chon = cot.selectbox(
+        "Model",
+        options=lua_chon_dong_xe,
+        index=dong_index,
+        key=f"model_choice_{hang_xe}",
+    )
+    if dong_da_chon != LUA_CHON_KHAC:
+        return dong_da_chon
+
+    return cot.text_input("Custom Model", value=dong_mac_dinh, key="model_custom").strip()
 
 
 def hien_form_thong_tin_xe(
@@ -23,8 +96,8 @@ def hien_form_thong_tin_xe(
     st.subheader("Car Information Form")
 
     cot1, cot2 = st.columns(2)
-    hang_xe = cot1.text_input("Brand", value=gia_tri_mac_dinh.get("brand", ""), key="brand")
-    dong_xe = cot2.text_input("Model", value=gia_tri_mac_dinh.get("model", ""), key="model")
+    hang_xe, ban_do_hang = _chon_hang_xe(cot1, gia_tri_mac_dinh)
+    dong_xe = _chon_dong_xe(cot2, hang_xe, ban_do_hang, gia_tri_mac_dinh)
 
     nam_sx = cot1.number_input(
         "Year",
@@ -116,7 +189,7 @@ def hien_form_thong_tin_xe(
 def hien_tai_anh_len():
     # """Hiển thị khu vực tải ảnh và trả về danh sách tệp."""
     tep_da_tai = st.file_uploader(
-        "Upload car images",
+        "Upload car images (optional)",
         type=["png", "jpg", "jpeg"],
         accept_multiple_files=True,
         key="uploaded_images",

@@ -4,12 +4,6 @@ import math
 import streamlit as st
 
 from dich_vu.dinh_gia import du_doan_gia_co_ban, tinh_dieu_chinh_gia
-from dich_vu.muc_do_hu_hong import (
-    ghep_chi_tiet_muc_do,
-    phan_loai_muc_do,
-    tong_hop_muc_do,
-)
-from dich_vu.phat_hien_hu_hong import phat_hien_hu_hong, ve_bbox_anh
 from giao_dien.bo_cuc import chen_css_co_ban, hien_tieu_de_dau_trang, hien_tieu_de_muc
 from giao_dien.thanh_phan import (
     doc_anh_da_tai,
@@ -24,14 +18,36 @@ from tien_ich.du_lieu_mau import HOP_SO, LOAI_NHIEN_LIEU, THONG_TIN_XE_MAC_DINH
 from tien_ich.trang_thai import khoi_tao_trang_thai
 
 
+def tong_hop_muc_do_rong():
+    return {
+        "total_damages": 0,
+        "num_dents": 0,
+        "num_scratches": 0,
+        "num_cracks": 0,
+        "max_severity": "none",
+        "average_severity_score": 0.0,
+    }
+
+
 def chay_pipeline(thong_tin_xe, danh_sach_anh):
     """Chạy pipeline dự đoán giá từ thông tin xe và ảnh."""
     thong_tin_xe_model = chuan_hoa_thong_tin_xe(thong_tin_xe)
     gia_co_ban = du_doan_gia_co_ban(thong_tin_xe_model)
-    danh_sach_phat_hien = phat_hien_hu_hong(danh_sach_anh)
-    anh_voi_bbox = ve_bbox_anh(danh_sach_anh, danh_sach_phat_hien)
-    danh_sach_muc_do = phan_loai_muc_do(danh_sach_phat_hien, danh_sach_anh)
-    tong_hop_muc_do_kq = tong_hop_muc_do(danh_sach_phat_hien, danh_sach_muc_do)
+
+    if danh_sach_anh:
+        from dich_vu.muc_do_hu_hong import phan_loai_muc_do, tong_hop_muc_do
+        from dich_vu.phat_hien_hu_hong import phat_hien_hu_hong, ve_bbox_anh
+
+        danh_sach_phat_hien = phat_hien_hu_hong(danh_sach_anh)
+        anh_voi_bbox = ve_bbox_anh(danh_sach_anh, danh_sach_phat_hien)
+        danh_sach_muc_do = phan_loai_muc_do(danh_sach_phat_hien, danh_sach_anh)
+        tong_hop_muc_do_kq = tong_hop_muc_do(danh_sach_phat_hien, danh_sach_muc_do)
+    else:
+        danh_sach_phat_hien = []
+        anh_voi_bbox = {}
+        danh_sach_muc_do = []
+        tong_hop_muc_do_kq = tong_hop_muc_do_rong()
+
     ket_qua_gia = tinh_dieu_chinh_gia(gia_co_ban, danh_sach_phat_hien, danh_sach_muc_do)
 
     return {
@@ -58,8 +74,6 @@ def kiem_tra_dau_vao(thong_tin_xe, danh_sach_anh):
         canh_bao.append("Fuel type is required.")
     if not thong_tin_xe.get("transmission", "").strip():
         canh_bao.append("Transmission is required.")
-    if not danh_sach_anh:
-        canh_bao.append("Please upload at least one car image.")
     return canh_bao
 
 
@@ -145,7 +159,7 @@ def chay_ung_dung():
 
     hien_tieu_de_dau_trang()
 
-    hien_tieu_de_muc("Input", "Provide car details and upload images.")
+    hien_tieu_de_muc("Input", "Provide car details. Upload images if you want damage-aware pricing.")
     thong_tin_xe = hien_form_thong_tin_xe(THONG_TIN_XE_MAC_DINH, LOAI_NHIEN_LIEU, HOP_SO)
     tep_da_tai = hien_tai_anh_len()
     danh_sach_anh = doc_anh_da_tai(tep_da_tai)
@@ -169,16 +183,21 @@ def chay_ung_dung():
     if st.session_state.get("ket_qua_cuoi"):
         ket_qua = st.session_state["ket_qua_cuoi"]
 
-        hien_tieu_de_muc("Detection Results")
-        hien_ket_qua_phat_hien(
-            ket_qua["images"],
-            ket_qua["detections"],
-            ket_qua["annotated_images"],
-        )
+        if ket_qua["images"]:
+            from dich_vu.muc_do_hu_hong import ghep_chi_tiet_muc_do
 
-        hien_tieu_de_muc("Severity Results")
-        bang_muc_do = ghep_chi_tiet_muc_do(ket_qua["detections"], ket_qua["severities"])
-        hien_ket_qua_muc_do(ket_qua["severity_summary"], bang_muc_do)
+            hien_tieu_de_muc("Detection Results")
+            hien_ket_qua_phat_hien(
+                ket_qua["images"],
+                ket_qua["detections"],
+                ket_qua["annotated_images"],
+            )
+
+            hien_tieu_de_muc("Severity Results")
+            bang_muc_do = ghep_chi_tiet_muc_do(ket_qua["detections"], ket_qua["severities"])
+            hien_ket_qua_muc_do(ket_qua["severity_summary"], bang_muc_do)
+        else:
+            st.info("No images uploaded. Final price is based on the XGBoost tabular prediction only.")
 
         hien_tieu_de_muc("Pricing Results")
         hien_ket_qua_gia(ket_qua["pricing"], ket_qua["severity_summary"])
