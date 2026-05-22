@@ -2,11 +2,12 @@ from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+import cv2
+from PIL import Image
 from ultralytics import YOLO
 
-DUONG_DAN_MO_HINH = Path(__file__).resolve().parents[1] / "Models" / "best.pt"
-KICH_THUOC_ANH_YOLO = 800
+DUONG_DAN_MO_HINH = Path(__file__).resolve().parents[1] / "Weights" / "best_97.pt"
+KICH_THUOC_ANH_YOLO = 640
 NGUONG_CONF = 0.25
 NGUONG_IOU = 0.45
 DO_DAY_VIEN = 5
@@ -103,41 +104,38 @@ def phat_hien_hu_hong(danh_sach_anh):
 def ve_bbox_anh(danh_sach_anh, danh_sach_phat_hien):
     # """Vẽ bounding box lên ảnh để hiển thị."""
     anh_da_ve = {}
-    font = ImageFont.load_default()
+    
+    
 
     for muc_anh in danh_sach_anh:
-        anh = muc_anh["image"].copy()
-        ve = ImageDraw.Draw(anh)
+        anh = muc_anh["image"].convert("RGB")
+        anh_bgr = cv2.cvtColor(np.array(anh), cv2.COLOR_RGB2BGR)
         phat_hien_tren_anh = [d for d in danh_sach_phat_hien if d["image_name"] == muc_anh["name"]]
 
         for phat_hien in phat_hien_tren_anh:
             x1, y1, x2, y2 = phat_hien["bbox"]
             mau = MAU_LOP.get(phat_hien["class"], (255, 0, 0))
-            ve.rectangle([x1, y1, x2, y2], outline=mau, width=DO_DAY_VIEN)
+            mau_bgr = (mau[2], mau[1], mau[0])
+            cv2.rectangle(anh_bgr, (x1, y1), (x2, y2), mau_bgr, DO_DAY_VIEN)
             nhan = f"{phat_hien['class']} {phat_hien['confidence']:.2f}"
 
-            khung_chu = ve.textbbox((0, 0), nhan, font=font)
-            chieu_rong_chu = khung_chu[2] - khung_chu[0]
-            chieu_cao_chu = khung_chu[3] - khung_chu[1]
+            (chieu_rong_chu, chieu_cao_chu), baseline = cv2.getTextSize(nhan,cv2.FONT_HERSHEY_SIMPLEX,0.4,1,)
             x_nhan = max(0, x1)
-            y_nhan = max(0, y1 - chieu_cao_chu - LE_CHU * 2)
+            y_nhan = max(0, y1 - chieu_cao_chu - baseline - LE_CHU * 2)
 
-            ve.rectangle(
-                [
-                    x_nhan,
-                    y_nhan,
+            cv2.rectangle(
+                anh_bgr,
+                (x_nhan, y_nhan),
+                (
                     x_nhan + chieu_rong_chu + LE_CHU * 2,
-                    y_nhan + chieu_cao_chu + LE_CHU * 2,
-                ],
-                fill=(0, 0, 0),
+                    y_nhan + chieu_cao_chu + baseline + LE_CHU * 2,
+                ),
+                (0, 0, 0),
+                -1,
             )
-            ve.text(
-                (x_nhan + LE_CHU, y_nhan + LE_CHU),
-                nhan,
-                fill=(255, 255, 255),
-                font=font,
-            )
+            cv2.putText(anh_bgr,nhan,(x_nhan + LE_CHU, y_nhan + chieu_cao_chu + LE_CHU),cv2.FONT_HERSHEY_SIMPLEX,0.4,(255, 255, 255),1,lineType=cv2.LINE_AA,)
 
-        anh_da_ve[muc_anh["name"]] = anh
+        anh_rgb = cv2.cvtColor(anh_bgr, cv2.COLOR_BGR2RGB)
+        anh_da_ve[muc_anh["name"]] = Image.fromarray(anh_rgb)
 
     return anh_da_ve

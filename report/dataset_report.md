@@ -10,7 +10,17 @@ Bộ dữ liệu trong dự án này được xây dựng để phục vụ bài
 
 Sau khi mô hình tabular dự đoán giá cơ sở, các thông tin trích xuất từ hai mô hình ảnh như số lượng vùng hư hỏng, loại hư hỏng, diện tích vùng hỏng và mức độ nghiêm trọng sẽ được đưa vào lớp **hybrid rule-based adjustment** để ước lượng mức giảm giá và tạo ra **adjusted price**.
 
+Trong ứng dụng hiện tại, phần ảnh là **tùy chọn**. Nếu người dùng không upload ảnh, hệ thống bỏ qua nhánh YOLO/CNN và giá cuối cùng chính là giá cơ sở được dự đoán từ mô hình tabular XGBoost.
+
 Do hiện tại chưa có ground truth cho **final car price after damage**, phần cuối của hệ thống được hiểu là một cơ chế **damage-aware price adjustment** chứ không phải một bộ dự đoán giá cuối được học trực tiếp từ nhãn.
+
+### 1.1. Sơ đồ pipeline hệ thống
+
+Sơ đồ dưới đây tóm tắt luồng xử lý tổng thể của hệ thống, từ đầu vào người dùng đến kết quả định giá cuối cùng:
+
+![Sơ đồ pipeline kiến trúc hệ thống](system_pipeline_diagram.png)
+
+Trong pipeline này, nhánh dữ liệu bảng luôn được xử lý để tạo **base price** bằng XGBoost. Nhánh ảnh chỉ được kích hoạt khi người dùng upload ảnh xe; khi đó YOLOv8s phát hiện vùng hư hỏng, ResNet18 phân loại mức độ nghiêm trọng, sau đó tầng rule-based kết hợp các thông tin này để điều chỉnh giá.
 
 ---
 
@@ -29,6 +39,7 @@ Dự án sử dụng ba nhóm dữ liệu chính:
 - **Mục đích:** huấn luyện YOLO để phát hiện các vùng hư hỏng trên xe.
 - **Nguồn gốc dữ liệu:** lấy từ phần `CarDD_COCO` trong bộ dữ liệu `car-damage-detection` trên Kaggle.
 - **Tiền xử lý / chuyển đổi:** dữ liệu được đưa lên Roboflow và xuất lại theo định dạng YOLO để thuận tiện cho quá trình huấn luyện. Vì vậy, cấu trúc dữ liệu hiện tại dùng file cấu hình `data.yaml` và các thư mục `train`, `val`, `test` thay cho cách tổ chức annotation kiểu COCO ban đầu.
+- **Phiên bản dữ liệu cuối:** ban đầu dự án dùng khoảng **4000 ảnh** cho các run nền tảng như `s_89`. Sau đó, dự án tạo phiên bản **merge_Data** bằng cách bổ sung thêm **2307 ảnh** có chủ đích cho ba lớp yếu nhất là `crack`, `scratch` và `dent`. Việc bổ sung này không áp dụng đều cho toàn bộ nhãn mà tập trung vào các lớp khó nhằm cải thiện khả năng phát hiện vết nứt, vết xước và vết móp.
 
 ### 2.3. Tabular price dataset
 
@@ -44,45 +55,35 @@ Cấu trúc thư mục hiện tại được tổ chức như sau:
 
 ```text
 Datasets/
-├── car_damage_severity/
-│   ├── training/
-│   └── validation/
-│
-├── coco_damage_car_yolov8/
-│   ├── train/
-│   ├── val/
-│   ├── test/
-│   └── data.yaml
-│
+├── Used_Car_Dataset.csv
+├── train_cleaned.csv
 ├── train-dataset.csv
+├── test.csv
 └── test-dataset.csv
+
+Models/
+├── model.pkl
+├── best.pt
+└── cnn_car.pkl
+
+Quan_sat/
+├── yolo_car_report/        # report của YOLOv8s trên merge_Data
+├── R-CNN_report/
+├── baseline_report.txt
+├── feature_importance_xgb.csv
+├── feature_importance_rf.csv
+├── permutation_importance_xgb.csv
+└── permutation_importance_rf.csv
+
+train/
+├── s_100_800.ipynb
+├── s_89.ipynb              # run YOLOv8s trên dataset gốc, dùng làm baseline
+├── test.ipynb
+├── cnn_train_car.ipynb
+└── train_eval_faster_rcnn_30e_640 (1).ipynb
 ```
 
 ### Giải thích cấu trúc
-
-#### `car_damage_severity/`
-
-Thư mục chứa dữ liệu cho bài toán **severity classification**. Dữ liệu được chia thành các tập phục vụ huấn luyện và đánh giá mô hình CNN.
-
-- `training/`: dữ liệu dùng để train mô hình.
-- `validation/`: dữ liệu dùng để theo dõi hiệu năng trong quá trình huấn luyện.
-
-Trong mỗi thư mục con, dữ liệu được tổ chức theo nhãn mức độ hư hỏng tương ứng với ba lớp:
-
-- `minor`
-- `moderate`
-- `severe`
-
-#### `coco_damage_car_yolov8/`
-
-Thư mục chứa dữ liệu cho bài toán **damage detection** bằng YOLO.
-
-- `train/`: tập huấn luyện.
-- `val/`: tập validation.
-- `test/`: tập test.
-- `data.yaml`: file cấu hình dataset cho YOLO, khai báo đường dẫn dữ liệu và danh sách lớp.
-
-Do dữ liệu đã được chuyển đổi sang định dạng YOLO, annotation không còn được tổ chức theo kiểu COCO JSON như nguồn gốc ban đầu, mà đi theo chuẩn YOLO để tương thích trực tiếp với quá trình train.
 
 #### `train-dataset.csv` và `test-dataset.csv`
 
@@ -92,6 +93,15 @@ Hai file dữ liệu bảng dùng cho bài toán **price regression**.
 - `test-dataset.csv`: dùng để đánh giá mô hình trên dữ liệu chưa thấy.
 
 Các thuộc tính tabular đại diện cho thông tin mô tả xe như năm sản xuất, số chỗ ngồi, số km đã đi và các đặc trưng cấu trúc khác liên quan đến giá xe.
+
+#### Dữ liệu ảnh YOLO và CNN
+
+Dữ liệu ảnh phục vụ YOLO/CNN được sử dụng trong các notebook huấn luyện trong thư mục `train/`. Trong repository hiện tại, các mô hình đã huấn luyện và kết quả quan sát được lưu lại dưới dạng checkpoint và báo cáo:
+
+- `Models/best.pt`: checkpoint YOLO đang được ứng dụng Streamlit sử dụng để phát hiện hư hỏng.
+- `Models/cnn_car.pkl`: checkpoint CNN/ResNet18 đang được dùng để phân loại mức độ hư hỏng.
+- `Quan_sat/yolo_car_report/`: ảnh minh họa batch train/validation, confusion matrix, PR/F1 curve và `results.csv` của run YOLOv8s trên dataset `merge_Data`.
+- `Quan_sat/R-CNN_report/`: kết quả thử nghiệm Faster R-CNN để tham khảo/so sánh.
 
 ---
 
@@ -107,7 +117,7 @@ Dữ liệu từ `train-dataset.csv` và `test-dataset.csv` được dùng để
 
 ### 4.2. Nhánh damage detection
 
-Dữ liệu trong `coco_damage_car_yolov8/` được dùng để huấn luyện mô hình **YOLOv8** nhằm phát hiện các vùng hư hỏng trên thân xe. Mô hình này cung cấp các thông tin như:
+Dữ liệu damage detection được sử dụng trong các notebook huấn luyện YOLO nhằm phát hiện các vùng hư hỏng trên thân xe. Dataset ảnh được tổ chức theo định dạng YOLO trong môi trường train, còn repository hiện tại lưu lại notebook, checkpoint và các kết quả quan sát trong `Quan_sat/yolo_car_report/`. Phiên bản dữ liệu cuối được dùng để chọn mô hình là `merge_Data`, được mở rộng từ dataset gốc khoảng 4000 ảnh bằng cách thêm 2307 ảnh cho các lớp `crack`, `scratch` và `dent`. Mô hình này cung cấp các thông tin như:
 
 - số lượng vùng hư hỏng,
 - loại hư hỏng,
@@ -116,27 +126,27 @@ Dữ liệu trong `coco_damage_car_yolov8/` được dùng để huấn luyện 
 
 Các kết quả này đóng vai trò là nguồn feature thị giác cho bước điều chỉnh giá.
 
-#### Lý do chọn mô hình `yolov8_s100_800`
+#### Lý do chọn YOLOv8s làm mô hình detection chính
 
-Trong các mô hình YOLO đã thử nghiệm, dự án lựa chọn checkpoint `yolov8_s100_800` làm mô hình phát hiện hư hỏng chính. Tên checkpoint này thể hiện cấu hình huấn luyện chính: sử dụng biến thể **YOLOv8s**, huấn luyện trong **100 epoch**, với kích thước ảnh đầu vào **800 px**. Đây là cấu hình được chọn vì phù hợp nhất với mục tiêu của dự án: phát hiện tương đối chính xác các vùng hư hỏng ngoại thất nhưng vẫn đủ nhẹ để tích hợp vào ứng dụng demo.
+Trong các mô hình YOLO đã thử nghiệm, dự án chọn **YOLOv8s train trên dataset `merge_Data`** làm mô hình phát hiện hư hỏng chính. Checkpoint đang được ứng dụng sử dụng nằm tại `Models/best.pt`; trong mã nguồn `dich_vu/phat_hien_hu_hong.py`, mô hình được gọi với `imgsz = 640`, `conf = 0.25` và `iou = 0.45`. Run `s_89` trên dataset gốc 4000 ảnh được xem là baseline so sánh, không còn là mô hình chính cuối cùng.
 
 Lý do đầu tiên là **YOLOv8s có mức cân bằng tốt giữa độ chính xác và tốc độ suy luận**. So với YOLOv8n, mô hình YOLOv8s có số tham số lớn hơn nên khả năng học đặc trưng hư hỏng tốt hơn, đặc biệt với các vùng khó như vết xước, vết nứt hoặc vết móp nhỏ. Trong khi đó, so với YOLOv8m, YOLOv8s nhẹ hơn đáng kể, tốc độ suy luận nhanh hơn và phù hợp hơn với hệ thống demo chạy trên máy cá nhân hoặc môi trường Streamlit.
 
 Lý do thứ hai là cấu hình **100 epoch** giúp mô hình có đủ thời gian học các đặc trưng của bộ dữ liệu damage detection mà không cần tăng số epoch quá cao. Với bài toán phát hiện hư hỏng xe, các đặc trưng thị giác có thể khá nhỏ, mảnh và dễ nhầm với phản sáng, đường gân thân xe hoặc vết bẩn. Vì vậy, việc huấn luyện đủ lâu giúp mô hình ổn định hơn so với các run ngắn, đồng thời vẫn tránh làm quá nặng quá trình huấn luyện.
 
-Lý do thứ ba là kích thước ảnh **800 px** được chọn để giữ lại nhiều chi tiết hơn trên ảnh xe. Các hư hỏng như `scratch`, `crack` hoặc `dent` thường có diện tích nhỏ, nếu ảnh đầu vào quá thấp thì các vùng này dễ bị mất chi tiết sau khi resize. Việc tăng kích thước ảnh lên 800 px giúp mô hình quan sát rõ hơn các vùng hỏng nhỏ, từ đó hỗ trợ tốt hơn cho bước phát hiện bounding box và bước phân loại mức độ hư hỏng phía sau.
+Lý do thứ ba là cấu hình **imgsz = 640** phù hợp với môi trường huấn luyện và triển khai hiện tại. Kích thước này đủ lớn để giữ lại nhiều chi tiết của các vùng hư hỏng, đồng thời vẫn giúp thời gian suy luận không quá nặng khi tích hợp vào ứng dụng. Trong `Quan_sat/yolo_car_report/results.csv`, run YOLOv8s trên `merge_Data` đạt mAP@0.5 tốt nhất ở khoảng epoch 79 với **Precision = 0.801**, **Recall = 0.682**, **mAP@0.5 = 0.726** và **mAP@0.5:0.95 = 0.568**. Nếu xét riêng mAP@0.5:0.95, epoch 75 đạt giá trị cao nhất khoảng **0.572**.
 
-Ngoài ra, trong quá trình thử nghiệm, dự án cũng đã đánh giá việc bổ sung thêm dữ liệu cho các lớp khó như `dent`, `scratch`, `crack`. Tuy nhiên, các lần mở rộng dữ liệu này chưa tạo ra cải thiện ổn định so với baseline tốt nhất. Vì vậy, checkpoint `yolov8_s100_800` được giữ lại làm mô hình chính vì cho kết quả tổng thể ổn định hơn, dễ tích hợp hơn và phù hợp với pipeline hiện tại gồm: phát hiện hư hỏng bằng YOLO, phân loại mức độ bằng CNN và điều chỉnh giá xe bằng rule-based adjustment.
+Ngoài ra, việc mở rộng dữ liệu chỉ tập trung vào `dent`, `scratch`, `crack` vì đây là ba lớp có đặc trưng nhỏ, mảnh và dễ bị bỏ sót nhất. Cách mở rộng này phù hợp với mục tiêu thực tế của dự án: tăng khả năng nhận diện các hư hỏng khó, thay vì chỉ tăng dữ liệu một cách đồng đều cho mọi nhãn. Vì vậy, YOLOv8s trên `merge_Data` được giữ làm mô hình chính vì cân bằng giữa độ chính xác, tốc độ, khả năng tổng quát hóa và mức độ dễ tích hợp vào pipeline hiện tại gồm: phát hiện hư hỏng bằng YOLO, phân loại mức độ bằng CNN/ResNet18 và điều chỉnh giá xe bằng rule-based adjustment.
 
 ### 4.3. Nhánh severity classification
 
-Dữ liệu trong `car_damage_severity/` được dùng để huấn luyện mô hình **CNN** nhằm phân loại mức độ nghiêm trọng của vùng hư hỏng thành ba mức:
+Dữ liệu severity classification được dùng trong notebook `train/cnn_train_car.ipynb` để huấn luyện mô hình **CNN/ResNet18** nhằm phân loại mức độ nghiêm trọng của vùng hư hỏng thành ba mức:
 
 - `minor`
 - `moderate`
 - `severe`
 
-Trong pipeline, CNN có thể được dùng sau bước detection để phân loại severity cho từng vùng damage đã phát hiện.
+Trong pipeline, CNN/ResNet18 được dùng sau bước detection để phân loại severity cho từng vùng damage đã phát hiện. Ứng dụng hiện tải checkpoint `Models/cnn_car.pkl`, crop vùng hư hỏng theo bounding box của YOLO, sau đó dự đoán một trong ba mức: `minor`, `moderate`, `severe`.
 
 ### 4.4. Lớp kết hợp cuối cùng
 
@@ -223,5 +233,7 @@ Dù chưa có dataset multimodal đồng bộ hoàn chỉnh và chưa có ground
 2. phát hiện hư hỏng từ ảnh,
 3. phân loại mức độ nghiêm trọng,
 4. điều chỉnh giá theo mức hư hỏng quan sát được.
+
+Nếu không có ảnh đầu vào, hệ thống vẫn hoạt động như một bài toán tabular regression thuần túy: dự đoán base price bằng XGBoost và trả kết quả này làm final price.
 
 Trong các bước phát triển tiếp theo, dự án có thể được cải thiện bằng cách bổ sung dữ liệu đồng bộ hơn giữa tabular và image data, đồng thời xây dựng nhãn hoặc quy tắc định lượng tốt hơn cho phần price adjustment.

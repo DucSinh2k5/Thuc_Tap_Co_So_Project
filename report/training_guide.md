@@ -9,6 +9,8 @@ Tài liệu này hướng dẫn cách huấn luyện, đánh giá và chọn mô
 - **XGBoost** để dự đoán **base price** từ dữ liệu bảng.
 - **Rule-based adjustment layer** để tạo **damage-aware adjusted price** từ base price và thông tin damage trên ảnh.
 
+Trong ứng dụng Streamlit hiện tại, ảnh xe là đầu vào **không bắt buộc**. Nếu người dùng không upload ảnh, pipeline chỉ chạy nhánh tabular và final price bằng base price từ XGBoost. Nếu có ảnh, hệ thống mới chạy thêm YOLO, CNN/ResNet18 và lớp điều chỉnh giá.
+
 Mục tiêu của file này là trả lời các câu hỏi sau:
 
 - Muốn train lại hệ thống thì cần chuẩn bị gì.
@@ -31,18 +33,20 @@ Mục tiêu của file này là trả lời các câu hỏi sau:
 - **Input:** crop vùng damage hoặc ảnh đã được crop sẵn theo vùng hỏng.
 - **Output:** `minor`, `moderate`, `severe`.
 - **Vai trò:** lượng hóa mức độ nghiêm trọng của hư hỏng để hỗ trợ bước điều chỉnh giá.
+- **Checkpoint đang dùng:** `Models/cnn_car.pkl`, được load theo kiến trúc ResNet18 trong `dich_vu/muc_do_hu_hong.py`.
 
 ### 2.3 XGBoost — Base Price Prediction
 
 - **Input:** dữ liệu bảng của xe cũ.
 - **Output:** giá cơ bản của xe.
 - **Vai trò:** dự đoán **base market price** trước khi điều chỉnh theo damage nhìn thấy trên ảnh.
+- **Checkpoint đang dùng:** `Models/model.pkl`, gồm preprocessor, danh sách feature được chọn và mô hình XGBoost.
 
 ### 2.4 Rule-Based Adjustment
 
 - **Input:** base price từ XGBoost, damage features từ YOLO, severity từ CNN.
 - **Output:** adjusted price.
-- **Lưu ý:** hiện tại chưa có ground-truth chắc chắn cho final price after damage, nên module này được hiểu là **price adjustment estimator**, không phải supervised final-price predictor.
+- **Lưu ý:** hiện tại chưa có ground-truth chắc chắn cho final price after damage, nên module này được hiểu là **price adjustment estimator**, không phải supervised final-price predictor. Khi không có damage detection, module trả về `final_price = base_price`.
 
 ---
 
@@ -59,10 +63,12 @@ Dataset detection chính của dự án hiện tại là bộ dữ liệu theo f
 - `scratch`
 - `tire flat`
 
-### Thư mục tham khảo
+Phiên bản dữ liệu dùng cho mô hình YOLO cuối là **merge_Data**. Dataset ban đầu có khoảng **4000 ảnh** và được dùng cho các run baseline như `s_89`. Sau đó, dự án bổ sung thêm **2307 ảnh** cho ba lớp yếu nhất là `crack`, `scratch` và `dent`, nâng tổng số ảnh lên khoảng **6307 ảnh**. Việc bổ sung dữ liệu có chủ đích này nhằm cải thiện khả năng phát hiện các hư hỏng nhỏ, mảnh và dễ bị bỏ sót, chứ không phải tăng đều dữ liệu cho tất cả các nhãn.
+
+### Thư mục tham khảo trong môi trường train
 
 ```text
-coco_damage_car_yolov8/
+coco_damage.yolov8/
 ├── train/
 │   ├── images/
 │   └── labels/
@@ -74,6 +80,8 @@ coco_damage_car_yolov8/
 │   └── labels/
 └── data.yaml
 ```
+
+Trong repository hiện tại, dữ liệu ảnh đầy đủ không được đặt trực tiếp trong `Datasets/`; các notebook huấn luyện, checkpoint và kết quả đánh giá được lưu trong `train/`, `Models/` và `Quan_sat/`.
 
 ### Quy tắc dùng split
 
@@ -106,13 +114,19 @@ Khuyến nghị:
 
 Dataset tabular dùng để dự đoán giá xe từ các feature có cấu trúc như:
 
-- `year`
-- `num_seats`
-- `km_driven`
-- `fuel`
-- `transmission`
-- `brand`
-- `model`
+- `Loai_nhien_lieu`
+- `Hop_so`
+- `Quyen_so_huu`
+- `Muc_tieu_hao(km/l)`
+- `Dung_tich(cc)`
+- `Cong_suat_toi_da`
+- `So_cho_ngoi`
+- `Tuoi_xe`
+- `Hang_xe`
+- `Km_moi_nam`
+- `Chay_nhieu`
+- `log_Quang_duong_da_di(km)`
+- `Top_xe`
 
 Target hiện tại là **base price** chứ không phải final price after damage.
 
@@ -147,40 +161,51 @@ Một số run baseline YOLO được train trên **Tesla T4 ~15GB VRAM**. Với
 
 Dự án đã thử các hướng sau cho bài toán damage detection:
 
-1. Train nhiều biến thể mô hình trên dataset ban đầu, gồm:
+1. Train nhiều biến thể mô hình trên dataset ban đầu khoảng 4000 ảnh, gồm:
    - `YOLOv8n`
    - `YOLOv8s`
    - `YOLOv8m`
-2. Thử bổ sung thêm dữ liệu ảnh tập trung cho các lớp khó `dent`, `scratch`, `crack` vào tập train.
-3. Thực hiện **hai lần** mở rộng dữ liệu theo hướng trên rồi train lại.
+2. Chọn `YOLOv8s` làm baseline phù hợp nhất về cân bằng tốc độ và độ chính xác.
+3. Tạo phiên bản dataset **merge_Data** bằng cách thêm 2307 ảnh cho các lớp khó `dent`, `scratch`, `crack`.
+4. Train lại YOLOv8s trên `merge_Data` với cùng cấu hình `epochs=100`, `batch=16`, `imgsz=640`.
 
-### 5.2 Kết luận từ các lần mở rộng dữ liệu
+### 5.2 Kết luận từ phiên bản merge_Data
 
-Mặc dù đã bổ sung thêm ảnh cho các lớp khó, các lần train lại sau đó **không cho kết quả tốt hơn**. Kết quả mAP tổng thể thấp hơn so với mô hình tốt nhất trên dataset ban đầu.
+Việc mở rộng dữ liệu không được thực hiện đồng đều cho toàn bộ nhãn, mà tập trung vào ba lớp yếu nhất là `crack`, `scratch` và `dent`. Đây là lựa chọn phù hợp với đặc điểm bài toán vì các lớp này thường có vùng hư hỏng nhỏ, mảnh, dễ lẫn với phản sáng, đường gân thân xe hoặc vết bẩn.
+
+Kết quả từ `Quan_sat/yolo_car_report/results.csv` cho thấy mô hình YOLOv8s trên `merge_Data` vẫn giữ hiệu năng ổn định với cùng cấu hình train. So với run `s_89` trên dataset gốc, mô hình mới có lợi thế lớn hơn về dữ liệu cho các lớp khó và phù hợp hơn với mục tiêu phát hiện hư hỏng thực tế.
+
+Khi đọc kết quả mAP, cần lưu ý khả năng xuất hiện **Test Set Label Noise**. Nếu tập test/validation gán nhãn thiếu các vết xước, móp hoặc nứt mờ, mô hình mới có thể phát hiện đúng các tổn thất này nhưng vẫn bị hệ thống chấm điểm tính là **False Positive** do không có ground truth tương ứng. Vì vậy, checkpoint cuối nên được đánh giá kết hợp giữa metrics tĩnh, ảnh dự đoán mẫu và inference trên dữ liệu thực tế.
 
 Điều này dẫn tới quyết định hiện tại:
 
-- **không dùng checkpoint từ các lần thêm dữ liệu nói trên làm model chính**, vì hiệu năng tổng thể không vượt baseline.
-- **giữ checkpoint tốt nhất từ dataset ban đầu** làm mô hình YOLO chính của dự án.
+- `s_89` được giữ làm baseline tham khảo trên dataset gốc.
+- YOLOv8s train trên `merge_Data` được chọn làm mô hình YOLO chính của dự án.
 
 ### 5.3 Checkpoint YOLO được chọn hiện tại
 
-Checkpoint YOLO chính hiện tại là `best.pt` thu được từ **dataset ban đầu** với cấu hình:
+Checkpoint YOLO chính hiện tại trong ứng dụng là `Models/best.pt`. Mã nguồn `dich_vu/phat_hien_hu_hong.py` tải checkpoint này và chạy suy luận với cấu hình:
 
 - `model = YOLOv8s`
+- `dataset = merge_Data`
 - `epochs = 100`
 - `batch = 16`
-- `imgsz = 640`
+- `imgsz = 640` khi inference trong app
+- `conf = 0.25`
+- `iou = 0.45`
 
 Kết quả được ghi nhận để chọn checkpoint này:
 
-- **mAP50 trên test ≈ 0.725 (72.5%)**
+- **best mAP50 trong `Quan_sat/yolo_car_report/results.csv`: epoch 79, Precision ≈ 0.801, Recall ≈ 0.682, mAP50 ≈ 0.726, mAP50-95 ≈ 0.568**
+- **best mAP50-95 trong `Quan_sat/yolo_car_report/results.csv`: epoch 75, mAP50-95 ≈ 0.572**
+
+Lưu ý: các chỉ số trong `results.csv` là kết quả validation của run YOLO, không phải test set độc lập. Nếu cần báo cáo số liệu test cuối cùng, cần chạy đánh giá riêng bằng `model.val(split="test")` sau khi đã chốt checkpoint.
 
 ### 5.4 Nguyên tắc chọn baseline
 
-`YOLOv8s` trên dataset ban đầu được giữ làm baseline vì:
+`YOLOv8s` trên `merge_Data` được giữ làm mô hình chính vì:
 
-- cho chất lượng tổng thể tốt hơn các lần mở rộng dữ liệu sau đó.
+- kế thừa cấu hình ổn định từ baseline `s_89` nhưng có thêm dữ liệu cho các lớp yếu.
 - cân bằng tốt giữa kích thước model, tốc độ suy luận và accuracy.
 - phù hợp nhất để tích hợp vào pipeline hiện tại.
 
@@ -288,6 +313,8 @@ Metric chính:
 
 Target hiện tại là **base price**, không phải final price after damage.
 
+Kết quả pipeline tabular hiện tại cho thấy XGBoost là mô hình tốt nhất trong các mô hình đã so sánh, với R² test khoảng **0.9367**, RMSE khoảng **1.4313** và MAE khoảng **0.8914** trên thang giá gốc của dataset. Mô hình này được lưu trong `Models/model.pkl` để ứng dụng sử dụng trực tiếp.
+
 ---
 
 ## 8. Data-Centric Improvement Strategy
@@ -392,8 +419,8 @@ Tài liệu ghi chép các lần train cụ thể nên để trong `training_rep
 
 ## 12. Recommended Next Steps
 
-1. Giữ `YOLOv8s` trên **dataset ban đầu** làm baseline chính.
-2. Chỉ train lại khi dữ liệu mới đã được audit rõ ràng.
-3. Tập trung vào `crack`, `scratch`, `dent` thay vì chỉ tiếp tục tăng epochs.
-4. Dùng checkpoint hiện tại của baseline cho pipeline detection và cho downstream crop-based severity classification.
-5. Sau khi dữ liệu tốt hơn, benchmark lại trên cùng một test protocol để quyết định có thay baseline hay không.
+1. Giữ `YOLOv8s` trên **merge_Data** làm mô hình detection chính.
+2. Dùng `s_89` như baseline tham khảo khi cần so sánh với dataset gốc.
+3. Tiếp tục ưu tiên audit nhãn và bổ sung dữ liệu cho `crack`, `scratch`, `dent`.
+4. Dùng `Models/best.pt` cho pipeline detection và dùng crop từ YOLO làm đầu vào cho downstream crop-based severity classification.
+5. Nếu có dữ liệu mới, benchmark lại trên cùng một validation/test protocol để quyết định có thay checkpoint hiện tại hay không.

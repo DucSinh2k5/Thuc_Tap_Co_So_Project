@@ -1,7 +1,7 @@
 task: detect
 mode: train
 model: yolov8s.pt
-data: /content/data/coco_damage_car_yolov8/data.yaml
+data: /content/data/coco_damage.yolov8/data.yaml
 epochs: 100
 time: null
 patience: 20
@@ -12,7 +12,7 @@ save_period: -1
 cache: false
 device: '0'
 workers: 8
-project: /content/drive/MyDrive/coco_damage_car_yolov8
+project: /content/drive/MyDrive/coco_damage_yolov8
 name: yolo_car
 exist_ok: false
 pretrained: true
@@ -107,4 +107,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: /content/drive/MyDrive/coco_damage_car_yolov8/yolo_car
+save_dir: /content/drive/MyDrive/coco_damage_yolov8/yolo_car

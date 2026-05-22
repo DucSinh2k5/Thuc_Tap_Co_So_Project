@@ -32,13 +32,8 @@ def _du_doan_lakh(mo_hinh, du_lieu):
     chi_so_chon = mo_hinh["selected_indices"]
     x = bien_doi.transform(du_lieu[mo_hinh["candidate_features"]])
     x_chon = x[:, chi_so_chon]
-
-    if "model_xgb" in mo_hinh:
-        du_doan = mo_hinh["model_xgb"].predict(x_chon)
-    elif "model_rf" in mo_hinh:
-        du_doan = mo_hinh["model_rf"].predict(x_chon)
-    else:
-        du_doan = mo_hinh["model_lr"].predict(mo_hinh["scaler_lr"].transform(x_chon))
+    du_doan = mo_hinh["model_xgb"].predict(x_chon)
+    
 
     return max(0.0, float(du_doan[0]))
 
@@ -55,11 +50,7 @@ def du_doan_gia_co_ban(thong_tin_xe):
     return round(gia_vnd / 100_000) * 100_000
 
 
-def tinh_dieu_chinh_gia(
-    gia_co_ban,
-    danh_sach_phat_hien,
-    danh_sach_muc_do,
-):
+def tinh_dieu_chinh_gia(gia_co_ban, danh_sach_phat_hien,danh_sach_muc_do,):
     #Tính toán điều chỉnh giá dựa trên hư hỏng và mức độ.
     if not danh_sach_phat_hien:
         return {
