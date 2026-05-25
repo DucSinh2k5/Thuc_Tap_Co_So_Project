@@ -1,34 +1,34 @@
 # Thuc_Tap_Co_So_Project
 
-## Streamlit MVP Demo
+## Demo MVP Streamlit
 
-This repository includes a Streamlit MVP for a used car price prediction demo. The UI collects car info,
-accepts images, runs a pipeline (tabular pricing, YOLO damage detection, severity grading, rule-based
-adjustment), and shows visual results.
+Kho này bao gồm một MVP Streamlit để demo dự đoán giá xe cũ. Giao diện thu thập thông tin xe,
+nhận ảnh, chạy pipeline (định giá theo bảng, phát hiện hư hỏng bằng YOLO, phân loại mức độ,
+điều chỉnh theo luật), và hiển thị kết quả trực quan.
 
-## Quick Start
+## Bắt đầu nhanh
 
-1. Create a virtual environment and install dependencies:
+1. Tạo môi trường ảo và cài phụ thuộc:
    pip install -r requirements.txt
-2. Run the app:
+2. Chạy ứng dụng:
    streamlit run app.py
 
-## Model Integration
+## Tích hợp mô hình
 
-- Damage detection uses Models/best_100_800sz.pt (YOLOv8) in dich_vu/phat_hien_hu_hong.py.
-- Severity classification uses Models/cnn_car.pkl in dich_vu/muc_do_hu_hong.py.
-- Pricing remains heuristic; replace du_doan_gia_co_ban and tinh_dieu_chinh_gia in
+- Phát hiện hư hỏng dùng Models/best_100_800sz.pt (YOLOv8) trong dich_vu/phat_hien_hu_hong.py.
+- Phân loại mức độ hư hỏng dùng Models/cnn_car.pkl trong dich_vu/muc_do_hu_hong.py.
+- Định giá hiện còn theo luật; hãy thay thế du_doan_gia_co_ban và tinh_dieu_chinh_gia trong
   dich_vu/dinh_gia.py.
 
-## Project Structure
+## Cấu trúc dự án
 
 - app.py
-- giao_dien/ (Streamlit layout and components)
-- dich_vu/ (prediction services)
-- tien_ich/ (formatters, sample data, session state helpers)
+- giao_dien/ (bố cục và thành phần Streamlit)
+- dich_vu/ (dịch vụ dự đoán)
+- tien_ich/ (định dạng, dữ liệu mẫu, trợ giúp trạng thái phiên)
 - assets/
 
-## Resources
+## Tài nguyên
 
-- Source Dataset: https://drive.google.com/drive/folders/1l8PDbF6fKk7dPHlFM9dzpRb4kd3I8ZU2?usp=sharing
-- Train Report: https://drive.google.com/drive/folders/1VIUuRqvohVyurhAZm-QcN7PRIgavPlwz?usp=drive_link
+- Bộ dữ liệu nguồn: https://drive.google.com/drive/folders/1l8PDbF6fKk7dPHlFM9dzpRb4kd3I8ZU2?usp=sharing
+- Báo cáo huấn luyện: https://drive.google.com/drive/folders/1VIUuRqvohVyurhAZm-QcN7PRIgavPlwz?usp=drive_link
