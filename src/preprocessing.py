@@ -3,7 +3,6 @@ from sklearn.preprocessing import OrdinalEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 def chuan_bi_feature(df):
     feature_khong_chon = []
