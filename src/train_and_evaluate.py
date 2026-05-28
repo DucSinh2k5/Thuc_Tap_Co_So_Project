@@ -9,7 +9,6 @@ from sklearn.inspection import permutation_importance
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from xgboost import XGBRegressor
 
-
 RF_COMPARE_PARAMS = {
     "n_estimators": 300,
     "max_depth": 12,
@@ -51,7 +50,7 @@ def tinh_metrics(y_true, y_pred, n_features):
 
 
 def run_baseline(y_train, y_val, output_path=None):
-    """Baseline mean/median predictor to compare against ML models."""
+   
     mean_pred = np.full_like(y_val, np.mean(y_train), dtype=float)
     median_pred = np.full_like(y_val, np.median(y_train), dtype=float)
 

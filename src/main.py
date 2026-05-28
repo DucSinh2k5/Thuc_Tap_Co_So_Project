@@ -115,14 +115,7 @@ def main():
     eda_after(df_tr)
 
     target_col = "Gia_theo_lakh"
-    excluded_cols = [
-        "Gia_theo_lakh",
-        "Gia_moi_lakh",
-        "Unnamed: 0",
-        "Nam_san_xuat",
-        "Quang_duong_da_di(km)",
-        "Ten_xe",
-    ]
+    excluded_cols = ["Gia_theo_lakh","Gia_moi_lakh","Unnamed: 0","Nam_san_xuat","Quang_duong_da_di(km)","Ten_xe",]
     candidate_features = [c for c in df_tr.columns if c not in excluded_cols]
     if not candidate_features:
         print("Khong tim thay cot feature trong train")
