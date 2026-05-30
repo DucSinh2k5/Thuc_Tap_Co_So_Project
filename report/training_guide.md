@@ -5,11 +5,11 @@
 Tài liệu này hướng dẫn cách huấn luyện, đánh giá và chọn mô hình cho dự án dự đoán giá xe ô tô cũ với pipeline đa mô hình gồm:
 
 - **YOLOv8** để phát hiện hư hỏng trên ảnh xe.
-- **CNN** để phân loại mức độ nghiêm trọng của vùng hư hỏng thành `minor`, `moderate`, `severe`.
+- **CNN** để phân loại mức độ nghiêm trọng của hư hỏng từ ảnh full thành `minor`, `moderate`, `severe`.
 - **XGBoost** để dự đoán **base price** từ dữ liệu bảng.
 - **Rule-based adjustment layer** để tạo **damage-aware adjusted price** từ base price và thông tin damage trên ảnh.
 
-Trong ứng dụng Streamlit hiện tại, ảnh xe là đầu vào **không bắt buộc**. Nếu người dùng không upload ảnh, pipeline chỉ chạy nhánh tabular và final price bằng base price từ XGBoost. Nếu có ảnh, hệ thống mới chạy thêm YOLO, CNN/ResNet18 và lớp điều chỉnh giá.
+Trong ứng dụng Streamlit hiện tại, ảnh xe là đầu vào **không bắt buộc**. Nếu người dùng không upload ảnh, pipeline chỉ chạy nhánh tabular và final price bằng base price từ XGBoost. Nếu có ảnh, hệ thống mới chạy thêm YOLO, CNN ConvNeXt-Tiny và lớp điều chỉnh giá.
 
 Mục tiêu của file này là trả lời các câu hỏi sau:
 
@@ -30,10 +30,10 @@ Mục tiêu của file này là trả lời các câu hỏi sau:
 
 ### 2.2 CNN — Severity Classification
 
-- **Input:** crop vùng damage hoặc ảnh đã được crop sẵn theo vùng hỏng.
+- **Input:** ảnh full người dùng upload.
 - **Output:** `minor`, `moderate`, `severe`.
-- **Vai trò:** lượng hóa mức độ nghiêm trọng của hư hỏng để hỗ trợ bước điều chỉnh giá.
-- **Checkpoint đang dùng:** `Models/cnn_car.pkl`, được load theo kiến trúc ResNet18 trong `dich_vu/muc_do_hu_hong.py`.
+- **Vai trò:** lượng hóa mức độ nghiêm trọng tổng quát của hư hỏng trong ảnh để hỗ trợ bước điều chỉnh giá.
+- **Mô hình chính:** ConvNeXt-Tiny, được chọn sau khi so sánh với ResNet18, ResNet50, EfficientNet-B0 và EfficientNet-B2.
 
 ### 2.3 XGBoost — Base Price Prediction
 
@@ -104,11 +104,13 @@ Dataset severity classification gồm 3 lớp:
 - `moderate`
 - `severe`
 
+Trong hướng hiện tại, CNN severity classification sử dụng **ảnh full** làm đầu vào, không phụ thuộc vào crop bounding box của YOLO. Điều này giúp phần CNN có thể chạy trực tiếp trên ảnh người dùng upload, giống giao diện demo phân loại ảnh full.
+
 Khuyến nghị:
 
-- crop càng sát vùng damage càng tốt.
-- kiểm tra chất lượng crop trước khi train.
-- nếu crop lấy từ YOLO thì chất lượng detection sẽ ảnh hưởng trực tiếp đến độ chính xác của CNN.
+- giữ cùng kiểu đầu vào giữa train và inference: nếu train bằng ảnh full thì khi demo cũng đưa ảnh full vào CNN.
+- kiểm tra chất lượng nhãn `minor`, `moderate`, `severe`, vì lớp `moderate` thường dễ nhập nhằng với hai lớp còn lại.
+- ưu tiên macro F1 bên cạnh accuracy để tránh chọn mô hình chỉ tốt trên lớp chiếm ưu thế.
 
 ### 3.3 XGBoost Dataset
 
@@ -302,6 +304,18 @@ Metric chính:
 
 Không nên chọn mô hình chỉ theo Accuracy vì `minor` và `moderate` có thể chồng lấn.
 
+Các notebook CNN đã thử nghiệm:
+
+| Notebook | Backbone | Best validation metric | Test accuracy | Test macro F1 |
+| --- | --- | ---: | ---: | ---: |
+| `resnet_18_new.ipynb` | ResNet18 | val_acc = 0.8209 | 0.6564 | 0.6490 |
+| `EfficientNet_B0.ipynb` | EfficientNet-B0 | val_macro_f1 = 0.7945 | 0.6821 | 0.6817 |
+| `Efficient_B2.ipynb` | EfficientNet-B2 | val_macro_f1 = 0.8022 | 0.6974 | 0.6954 |
+| `ResNet50.ipynb` | ResNet50 | val_acc = 0.8128 | 0.7026 | 0.7043 |
+| `ConvNeXt_Tiny.ipynb` | ConvNeXt-Tiny | val_macro_f1 = 0.8342 | 0.7077 | 0.7084 |
+
+ConvNeXt-Tiny được chọn làm mô hình CNN chính vì có test accuracy và test macro F1 cao nhất trong các mô hình đã thử. Mô hình này cũng đạt validation macro F1 cao nhất, cho thấy khả năng cân bằng giữa ba lớp tốt hơn so với ResNet18 và các biến thể EfficientNet trong thí nghiệm hiện tại.
+
 ### 7.3 XGBoost
 
 Metric chính:
@@ -422,5 +436,5 @@ Tài liệu ghi chép các lần train cụ thể nên để trong `training_rep
 1. Giữ `YOLOv8s` trên **merge_Data** làm mô hình detection chính.
 2. Dùng `s_89` như baseline tham khảo khi cần so sánh với dataset gốc.
 3. Tiếp tục ưu tiên audit nhãn và bổ sung dữ liệu cho `crack`, `scratch`, `dent`.
-4. Dùng `Models/best.pt` cho pipeline detection và dùng crop từ YOLO làm đầu vào cho downstream crop-based severity classification.
+4. Dùng `Models/best.pt` cho pipeline detection và dùng ConvNeXt-Tiny làm mô hình CNN chính để phân loại severity trực tiếp từ ảnh full người dùng upload.
 5. Nếu có dữ liệu mới, benchmark lại trên cùng một validation/test protocol để quyết định có thay checkpoint hiện tại hay không.

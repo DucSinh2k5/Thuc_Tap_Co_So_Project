@@ -6,9 +6,9 @@ Bộ dữ liệu trong dự án này được xây dựng để phục vụ bài
 
 - **Dữ liệu tabular** dùng để dự đoán **base price** của xe bằng XGBoost.
 - **Dữ liệu ảnh damage detection** dùng để phát hiện các vùng hư hỏng trên xe bằng YOLO.
-- **Dữ liệu ảnh severity classification** dùng để phân loại mức độ nghiêm trọng của từng hư hỏng bằng CNN.
+- **Dữ liệu ảnh severity classification** dùng để phân loại mức độ nghiêm trọng của hư hỏng từ ảnh xe full bằng CNN.
 
-Sau khi mô hình tabular dự đoán giá cơ sở, các thông tin trích xuất từ hai mô hình ảnh như số lượng vùng hư hỏng, loại hư hỏng, diện tích vùng hỏng và mức độ nghiêm trọng sẽ được đưa vào lớp **hybrid rule-based adjustment** để ước lượng mức giảm giá và tạo ra **adjusted price**.
+Sau khi mô hình tabular dự đoán giá cơ sở, các thông tin trích xuất từ hai mô hình ảnh như số lượng vùng hư hỏng, loại hư hỏng, diện tích vùng hỏng từ YOLO và mức độ nghiêm trọng từ CNN trên ảnh full sẽ được đưa vào lớp **hybrid rule-based adjustment** để ước lượng mức giảm giá và tạo ra **adjusted price**.
 
 Trong ứng dụng hiện tại, phần ảnh là **tùy chọn**. Nếu người dùng không upload ảnh, hệ thống bỏ qua nhánh YOLO/CNN và giá cuối cùng chính là giá cơ sở được dự đoán từ mô hình tabular XGBoost.
 
@@ -20,7 +20,7 @@ Sơ đồ dưới đây tóm tắt luồng xử lý tổng thể của hệ th�
 
 ![Sơ đồ pipeline kiến trúc hệ thống](system_pipeline_diagram.png)
 
-Trong pipeline này, nhánh dữ liệu bảng luôn được xử lý để tạo **base price** bằng XGBoost. Nhánh ảnh chỉ được kích hoạt khi người dùng upload ảnh xe; khi đó YOLOv8s phát hiện vùng hư hỏng, ResNet18 phân loại mức độ nghiêm trọng, sau đó tầng rule-based kết hợp các thông tin này để điều chỉnh giá.
+Trong pipeline này, nhánh dữ liệu bảng luôn được xử lý để tạo **base price** bằng XGBoost. Nhánh ảnh chỉ được kích hoạt khi người dùng upload ảnh xe; khi đó YOLOv8s phát hiện các vùng hư hỏng, đồng thời CNN ConvNeXt-Tiny phân loại mức độ nghiêm trọng trực tiếp từ ảnh full người dùng đưa vào. Tầng rule-based sau đó kết hợp thông tin detection và severity để điều chỉnh giá.
 
 ---
 
@@ -32,7 +32,7 @@ Dự án sử dụng ba nhóm dữ liệu chính:
 
 - **Mục đích:** huấn luyện mô hình CNN để phân loại mức độ hư hỏng thành `minor`, `moderate`, `severe`.
 - **Nguồn:** bộ dữ liệu `car-damage-detection` trên Kaggle.
-- **Cách sử dụng trong dự án:** giữ nguyên phần severity dataset để phục vụ bài toán classification.
+- **Cách sử dụng trong dự án:** dùng ảnh full trong severity dataset để huấn luyện và đánh giá bài toán image classification.
 
 ### 2.2. Damage detection dataset (YOLO)
 
@@ -79,7 +79,11 @@ train/
 ├── s_100_800.ipynb
 ├── s_89.ipynb              # run YOLOv8s trên dataset gốc, dùng làm baseline
 ├── test.ipynb
-├── cnn_train_car.ipynb
+├── resnet_18_new.ipynb       # baseline CNN ResNet18
+├── EfficientNet_B0.ipynb
+├── Efficient_B2.ipynb
+├── ResNet50.ipynb
+├── ConvNeXt_Tiny.ipynb       # mô hình CNN chính hiện tại
 └── train_eval_faster_rcnn_30e_640 (1).ipynb
 ```
 
@@ -99,7 +103,7 @@ Các thuộc tính tabular đại diện cho thông tin mô tả xe như năm s�
 Dữ liệu ảnh phục vụ YOLO/CNN được sử dụng trong các notebook huấn luyện trong thư mục `train/`. Trong repository hiện tại, các mô hình đã huấn luyện và kết quả quan sát được lưu lại dưới dạng checkpoint và báo cáo:
 
 - `Models/best.pt`: checkpoint YOLO đang được ứng dụng Streamlit sử dụng để phát hiện hư hỏng.
-- `Models/cnn_car.pkl`: checkpoint CNN/ResNet18 đang được dùng để phân loại mức độ hư hỏng.
+- `Models/cnn_car.pkl`: checkpoint CNN chính dùng cho severity classification; hướng hiện tại chọn ConvNeXt-Tiny thay cho ResNet18.
 - `Quan_sat/yolo_car_report/`: ảnh minh họa batch train/validation, confusion matrix, PR/F1 curve và `results.csv` của run YOLOv8s trên dataset `merge_Data`.
 - `Quan_sat/R-CNN_report/`: kết quả thử nghiệm Faster R-CNN để tham khảo/so sánh.
 
@@ -136,17 +140,29 @@ Lý do thứ hai là cấu hình **100 epoch** giúp mô hình có đủ thời 
 
 Lý do thứ ba là cấu hình **imgsz = 640** phù hợp với môi trường huấn luyện và triển khai hiện tại. Kích thước này đủ lớn để giữ lại nhiều chi tiết của các vùng hư hỏng, đồng thời vẫn giúp thời gian suy luận không quá nặng khi tích hợp vào ứng dụng. Trong `Quan_sat/yolo_car_report/results.csv`, run YOLOv8s trên `merge_Data` đạt mAP@0.5 tốt nhất ở khoảng epoch 79 với **Precision = 0.801**, **Recall = 0.682**, **mAP@0.5 = 0.726** và **mAP@0.5:0.95 = 0.568**. Nếu xét riêng mAP@0.5:0.95, epoch 75 đạt giá trị cao nhất khoảng **0.572**.
 
-Ngoài ra, việc mở rộng dữ liệu chỉ tập trung vào `dent`, `scratch`, `crack` vì đây là ba lớp có đặc trưng nhỏ, mảnh và dễ bị bỏ sót nhất. Cách mở rộng này phù hợp với mục tiêu thực tế của dự án: tăng khả năng nhận diện các hư hỏng khó, thay vì chỉ tăng dữ liệu một cách đồng đều cho mọi nhãn. Vì vậy, YOLOv8s trên `merge_Data` được giữ làm mô hình chính vì cân bằng giữa độ chính xác, tốc độ, khả năng tổng quát hóa và mức độ dễ tích hợp vào pipeline hiện tại gồm: phát hiện hư hỏng bằng YOLO, phân loại mức độ bằng CNN/ResNet18 và điều chỉnh giá xe bằng rule-based adjustment.
+Ngoài ra, việc mở rộng dữ liệu chỉ tập trung vào `dent`, `scratch`, `crack` vì đây là ba lớp có đặc trưng nhỏ, mảnh và dễ bị bỏ sót nhất. Cách mở rộng này phù hợp với mục tiêu thực tế của dự án: tăng khả năng nhận diện các hư hỏng khó, thay vì chỉ tăng dữ liệu một cách đồng đều cho mọi nhãn. Vì vậy, YOLOv8s trên `merge_Data` được giữ làm mô hình detection chính vì cân bằng giữa độ chính xác, tốc độ, khả năng tổng quát hóa và mức độ dễ tích hợp vào pipeline hiện tại gồm: phát hiện hư hỏng bằng YOLO, phân loại mức độ bằng CNN ConvNeXt-Tiny và điều chỉnh giá xe bằng rule-based adjustment.
 
 ### 4.3. Nhánh severity classification
 
-Dữ liệu severity classification được dùng trong notebook `train/cnn_train_car.ipynb` để huấn luyện mô hình **CNN/ResNet18** nhằm phân loại mức độ nghiêm trọng của vùng hư hỏng thành ba mức:
+Dữ liệu severity classification được dùng trong các notebook CNN trong thư mục `train/` để huấn luyện mô hình phân loại mức độ nghiêm trọng của hư hỏng từ **ảnh full** thành ba mức:
 
 - `minor`
 - `moderate`
 - `severe`
 
-Trong pipeline, CNN/ResNet18 được dùng sau bước detection để phân loại severity cho từng vùng damage đã phát hiện. Ứng dụng hiện tải checkpoint `Models/cnn_car.pkl`, crop vùng hư hỏng theo bounding box của YOLO, sau đó dự đoán một trong ba mức: `minor`, `moderate`, `severe`.
+Trong pipeline mới, CNN không còn được mô tả như một mô hình nhận crop damage từ YOLO. Mô hình severity classification nhận trực tiếp ảnh full người dùng upload và dự đoán một trong ba mức: `minor`, `moderate`, `severe`. YOLO và CNN vì vậy là hai nhánh xử lý ảnh song song: YOLO cung cấp loại/vị trí/diện tích hư hỏng, còn CNN cung cấp nhãn mức độ tổng quát của ảnh.
+
+Các mô hình CNN đã được thử nghiệm gồm:
+
+| Notebook                | Backbone        | Best validation metric | Test accuracy | Test macro F1 |
+| ----------------------- | --------------- | ---------------------: | ------------: | ------------: |
+| `resnet_18_new.ipynb`   | ResNet18        |       val_acc = 0.8209 |        0.6564 |        0.6490 |
+| `EfficientNet_B0.ipynb` | EfficientNet-B0 |  val_macro_f1 = 0.7945 |        0.6821 |        0.6817 |
+| `Efficient_B2.ipynb`    | EfficientNet-B2 |  val_macro_f1 = 0.8022 |        0.6974 |        0.6954 |
+| `ResNet50.ipynb`        | ResNet50        |       val_acc = 0.8128 |        0.7026 |        0.7043 |
+| `ConvNeXt_Tiny.ipynb`   | ConvNeXt-Tiny   |  val_macro_f1 = 0.8342 |        0.7077 |        0.7084 |
+
+ConvNeXt-Tiny được chọn làm mô hình CNN chính vì đạt kết quả tốt nhất trong nhóm mô hình đã thử trên cả validation macro F1 và test macro F1. Ngoài ra, ConvNeXt-Tiny có kiến trúc hiện đại hơn ResNet18, phù hợp hơn với bài toán phân loại ảnh hư hỏng có nhiều chi tiết nhỏ, phản xạ ánh sáng và khác biệt mờ giữa `minor`, `moderate`, `severe`.
 
 ### 4.4. Lớp kết hợp cuối cùng
 
@@ -176,7 +192,7 @@ hệ thống áp dụng một lớp **rule-based adjustment** để ước lư�
 - **Kiểu dữ liệu:** ảnh.
 - **Bài toán:** multi-class image classification.
 - **Nhãn:** `minor`, `moderate`, `severe`.
-- **Mức sử dụng trong dự án:** phân loại mức độ nghiêm trọng của hư hỏng.
+- **Mức sử dụng trong dự án:** phân loại mức độ nghiêm trọng của hư hỏng từ ảnh full người dùng upload.
 
 ### 5.2. Dữ liệu YOLO detection
 

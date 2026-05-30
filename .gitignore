@@ -1,2 +1,9 @@
 models/
 tests/tests_CNN/ConvNeXt.pkl
+tests/test_CNN/ConvNeXt.pkl
+tests/test_CNN/Efficient_B0.pkl
+tests/test_CNN/ResNet50.pkl
+tests/test_CNN/Efficient_B2.pkl
+tests/test_CNN/cnn_car.pkl
+tests/test_YOLO/weights/best_rcnn.pt
+tests/test_YOLO/weights/best_m.pt

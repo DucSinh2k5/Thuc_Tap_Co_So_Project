@@ -2,19 +2,20 @@
 
 ## 1. Mục tiêu báo cáo
 
-Tài liệu này ghi lại các lần huấn luyện mô hình **YOLOv8** cho bài toán **car damage detection** trong pipeline dự đoán giá xe cũ. Module này có nhiệm vụ phát hiện các hư hỏng ngoại quan trên ảnh xe để tạo ra các feature downstream như:
+Tài liệu này ghi lại các lần huấn luyện mô hình ảnh trong pipeline dự đoán giá xe cũ, gồm **YOLOv8** cho bài toán **car damage detection** và **CNN** cho bài toán **severity classification**. Nhánh ảnh có nhiệm vụ trích xuất các tín hiệu thị giác như:
 
 - số lượng hư hỏng theo lớp,
 - diện tích vùng hư hỏng,
-- thông tin đầu vào cho bước **severity classification**,
+- mức độ hư hỏng từ mô hình **severity classification**,
 - tín hiệu cho bước **price adjustment** trong tầng hybrid phía sau.
 
-Báo cáo này tập trung vào các thực nghiệm của phần **object detection**, bao gồm:
+Báo cáo này tập trung vào các thực nghiệm của phần **object detection** và **CNN classification**, bao gồm:
 
 - benchmark nhiều biến thể YOLOv8 trên dataset ban đầu,
 - thử nghiệm mở rộng dataset theo hướng **merge_Data**, bổ sung 2307 ảnh cho các lớp khó `crack`, `scratch`, `dent`,
+- benchmark các backbone CNN cho severity classification gồm ResNet18, ResNet50, EfficientNet-B0, EfficientNet-B2 và ConvNeXt-Tiny,
 - thử nghiệm Faster R-CNN ResNet50-FPN ở mức so sánh phụ,
-- quyết định chọn checkpoint YOLO chính thức để dùng cho pipeline hiện tại.
+- quyết định chọn checkpoint YOLO và CNN chính thức để dùng cho pipeline hiện tại.
 
 ---
 
@@ -183,7 +184,63 @@ Lưu ý: `Quan_sat/yolo_car_report/results.csv` là kết quả validation trong
 
 ---
 
-## 6. Thử nghiệm Faster R-CNN để so sánh phụ
+## 6. Thử nghiệm CNN cho severity classification
+
+### 6.1 Mục tiêu của nhánh CNN
+
+Nhánh CNN có nhiệm vụ phân loại mức độ hư hỏng của ảnh xe thành ba lớp:
+
+- `minor`
+- `moderate`
+- `severe`
+
+Khác với mô tả cũ dùng crop damage từ YOLO, hướng hiện tại của dự án sử dụng **ảnh full người dùng upload** làm đầu vào cho CNN. Cách này phù hợp với giao diện demo hiện tại: người dùng đưa vào một ảnh xe, mô hình CNN phân loại trực tiếp mức độ hư hỏng tổng quát của ảnh, sau đó kết quả được dùng cùng các feature detection từ YOLO trong tầng rule-based adjustment.
+
+### 6.2 Các mô hình CNN đã thử nghiệm
+
+Dự án đã thử nghiệm 5 backbone CNN trong thư mục `train/`:
+
+| Notebook | Backbone | Best validation metric | Test accuracy | Test macro F1 |
+| --- | --- | ---: | ---: | ---: |
+| `resnet_18_new.ipynb` | ResNet18 | val_acc = 0.8209 | 0.6564 | 0.6490 |
+| `EfficientNet_B0.ipynb` | EfficientNet-B0 | val_macro_f1 = 0.7945 | 0.6821 | 0.6817 |
+| `Efficient_B2.ipynb` | EfficientNet-B2 | val_macro_f1 = 0.8022 | 0.6974 | 0.6954 |
+| `ResNet50.ipynb` | ResNet50 | val_acc = 0.8128 | 0.7026 | 0.7043 |
+| `ConvNeXt_Tiny.ipynb` | ConvNeXt-Tiny | val_macro_f1 = 0.8342 | 0.7077 | 0.7084 |
+
+Các chỉ số trên cho thấy ResNet18 đạt validation accuracy tương đối cao nhưng giảm mạnh trên test set. Điều này phản ánh khả năng tổng quát hóa chưa ổn định, đặc biệt với lớp trung gian `moderate`. Các backbone mới hơn như EfficientNet-B2, ResNet50 và ConvNeXt-Tiny cải thiện dần kết quả test.
+
+### 6.3 Lý do chọn ConvNeXt-Tiny
+
+ConvNeXt-Tiny được chọn làm mô hình CNN chính vì đạt kết quả tốt nhất trong nhóm mô hình đã thử:
+
+- validation macro F1 cao nhất: **0.8342**,
+- test accuracy cao nhất: **0.7077**,
+- test macro F1 cao nhất: **0.7084**.
+
+So với ResNet18, ConvNeXt-Tiny có kiến trúc hiện đại hơn và khả năng học đặc trưng thị giác tốt hơn trong các bài toán classification ảnh tự nhiên. Với bài toán hư hỏng xe, sự khác biệt giữa `minor`, `moderate` và `severe` thường phụ thuộc vào các chi tiết nhỏ, phản xạ ánh sáng, vùng móp/xước mờ và bố cục ảnh. ConvNeXt-Tiny cho kết quả cân bằng hơn trên test set, nên phù hợp hơn để dùng làm checkpoint CNN chính của dự án.
+
+### 6.4 Demo định tính trên cùng một ảnh test
+
+Ngoài các metric định lượng, dự án có thử chạy cùng một ảnh xe bị hư hỏng qua 5 mô hình CNN để quan sát kết quả inference:
+
+| Mô hình | Kết quả dự đoán | Xác suất |
+| --- | ---: | ---: |
+| ResNet18 | SEVERE | 60.61% |
+| EfficientNet-B0 | MINOR | 42.60% |
+| EfficientNet-B2 | SEVERE | 42.31% |
+| ResNet50 | SEVERE | 40.88% |
+| ConvNeXt-Tiny | MODERATE | 44.35% |
+
+Với ảnh test này, nhãn đúng là `moderate`, do đó ConvNeXt-Tiny là mô hình duy nhất dự đoán đúng trong ví dụ định tính. ResNet18, EfficientNet-B2 và ResNet50 đều nghiêng về `severe`, trong khi EfficientNet-B0 dự đoán `minor`. Dù confidence của ConvNeXt-Tiny chưa quá cao, kết quả này phù hợp với bảng đánh giá định lượng, nơi ConvNeXt-Tiny đạt test accuracy và macro F1 tốt nhất. Khi đưa vào báo cáo Word, có thể chèn hình minh họa với caption: **So sánh kết quả dự đoán severity của 5 mô hình CNN trên cùng một ảnh test. ConvNeXt-Tiny là mô hình duy nhất dự đoán đúng nhãn moderate trong ví dụ này.**
+
+### 6.5 Hạn chế của nhánh CNN
+
+Dù ConvNeXt-Tiny là mô hình tốt nhất trong các thử nghiệm hiện tại, test accuracy khoảng 70.77% cho thấy bài toán severity classification vẫn còn khó. Lớp `moderate` thường là lớp nhập nhằng nhất vì nằm giữa hai mức `minor` và `severe`. Vì vậy, khi đưa vào tầng điều chỉnh giá, nên xem kết quả CNN là một tín hiệu hỗ trợ thay vì nhãn tuyệt đối hoàn toàn chắc chắn.
+
+---
+
+## 7. Thử nghiệm Faster R-CNN để so sánh phụ
 
 Ngoài YOLOv8, dự án có thử nghiệm thêm **Faster R-CNN ResNet50-FPN** trong notebook `train/train_eval_faster_rcnn_30e_640 (1).ipynb`. Kết quả được lưu tại `Quan_sat/R-CNN_report/` với cấu hình:
 
@@ -202,9 +259,9 @@ Kết quả này thấp hơn rõ rệt so với YOLOv8s trong cùng bài toán d
 
 ---
 
-## 7. Kết luận tổng thể
+## 8. Kết luận tổng thể
 
-### 7.1 Kết luận về lựa chọn mô hình
+### 8.1 Kết luận về lựa chọn mô hình
 
 Mô hình YOLO hiện tại nên dùng cho dự án là:
 
@@ -212,7 +269,13 @@ Mô hình YOLO hiện tại nên dùng cho dự án là:
 - **`epochs = 100`, `batch = 16`, `imgsz = 640` khi tích hợp trong app**
 - **`Models/best.pt` với dataset `merge_Data`, validation mAP50 tốt nhất khoảng 0.726**
 
-### 7.2 Kết luận về chiến lược cải thiện
+Mô hình CNN hiện tại nên dùng cho severity classification là:
+
+- **ConvNeXt-Tiny từ `train/ConvNeXt_Tiny.ipynb`**
+- **input là ảnh full người dùng upload**
+- **test accuracy khoảng 0.7077 và test macro F1 khoảng 0.7084**
+
+### 8.2 Kết luận về chiến lược cải thiện
 
 Từ các lần train đã thực hiện, có thể rút ra rằng:
 
@@ -226,10 +289,12 @@ Từ các lần train đã thực hiện, có thể rút ra rằng:
   - thêm hard negatives,
   - chỉ train lại sau khi chất lượng dữ liệu tốt hơn.
 
-### 7.3 Trạng thái hiện tại
+### 8.3 Trạng thái hiện tại
 
 - Baseline tham khảo: **`s_89` trên dataset ban đầu khoảng 4000 ảnh**.
 - Mô hình YOLO chính: **YOLOv8s trên dataset `merge_Data` khoảng 6307 ảnh**.
+- Mô hình CNN chính: **ConvNeXt-Tiny phân loại severity từ ảnh full**.
 - Checkpoint production-like hiện tại: **`Models/best.pt` từ run `epochs=100`, `batch=16`, `imgsz=640`**.
+- Checkpoint CNN cần đồng bộ khi triển khai: **ConvNeXt-Tiny từ `train/ConvNeXt_Tiny.ipynb`**, lưu dưới `Models/cnn_car.pkl` nếu dùng trực tiếp trong ứng dụng.
 - Dữ liệu bổ sung: **2307 ảnh cho `dent/scratch/crack`, không thêm đều cho tất cả nhãn**.
 - Faster R-CNN ResNet50-FPN: **chỉ dùng làm so sánh phụ, không chọn làm mô hình chính**.
