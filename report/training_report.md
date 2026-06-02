@@ -272,6 +272,7 @@ Mô hình YOLO hiện tại nên dùng cho dự án là:
 Mô hình CNN hiện tại nên dùng cho severity classification là:
 
 - **ConvNeXt-Tiny từ `train/ConvNeXt_Tiny.ipynb`**
+- **checkpoint tích hợp:** `Models/ConvNeXt.pkl`
 - **input là ảnh full người dùng upload**
 - **test accuracy khoảng 0.7077 và test macro F1 khoảng 0.7084**
 
@@ -295,6 +296,6 @@ Từ các lần train đã thực hiện, có thể rút ra rằng:
 - Mô hình YOLO chính: **YOLOv8s trên dataset `merge_Data` khoảng 6307 ảnh**.
 - Mô hình CNN chính: **ConvNeXt-Tiny phân loại severity từ ảnh full**.
 - Checkpoint production-like hiện tại: **`Models/best.pt` từ run `epochs=100`, `batch=16`, `imgsz=640`**.
-- Checkpoint CNN cần đồng bộ khi triển khai: **ConvNeXt-Tiny từ `train/ConvNeXt_Tiny.ipynb`**, lưu dưới `Models/cnn_car.pkl` nếu dùng trực tiếp trong ứng dụng.
+- Checkpoint CNN cần đồng bộ khi triển khai: **ConvNeXt-Tiny từ `train/ConvNeXt_Tiny.ipynb`**, lưu dưới `Models/ConvNeXt.pkl` nếu dùng trực tiếp trong ứng dụng.
 - Dữ liệu bổ sung: **2307 ảnh cho `dent/scratch/crack`, không thêm đều cho tất cả nhãn**.
 - Faster R-CNN ResNet50-FPN: **chỉ dùng làm so sánh phụ, không chọn làm mô hình chính**.

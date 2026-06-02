@@ -64,7 +64,7 @@ Datasets/
 Models/
 ├── model.pkl
 ├── best.pt
-└── cnn_car.pkl
+└── ConvNeXt.pkl
 
 Quan_sat/
 ├── yolo_car_report/        # report của YOLOv8s trên merge_Data
@@ -103,7 +103,7 @@ Các thuộc tính tabular đại diện cho thông tin mô tả xe như năm s�
 Dữ liệu ảnh phục vụ YOLO/CNN được sử dụng trong các notebook huấn luyện trong thư mục `train/`. Trong repository hiện tại, các mô hình đã huấn luyện và kết quả quan sát được lưu lại dưới dạng checkpoint và báo cáo:
 
 - `Models/best.pt`: checkpoint YOLO đang được ứng dụng Streamlit sử dụng để phát hiện hư hỏng.
-- `Models/cnn_car.pkl`: checkpoint CNN chính dùng cho severity classification; hướng hiện tại chọn ConvNeXt-Tiny thay cho ResNet18.
+- `Models/ConvNeXt.pkl`: checkpoint CNN chính dùng cho severity classification; hướng hiện tại chọn ConvNeXt-Tiny thay cho ResNet18.
 - `Quan_sat/yolo_car_report/`: ảnh minh họa batch train/validation, confusion matrix, PR/F1 curve và `results.csv` của run YOLOv8s trên dataset `merge_Data`.
 - `Quan_sat/R-CNN_report/`: kết quả thử nghiệm Faster R-CNN để tham khảo/so sánh.
 

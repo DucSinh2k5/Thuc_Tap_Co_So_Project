@@ -34,6 +34,7 @@ Mục tiêu của file này là trả lời các câu hỏi sau:
 - **Output:** `minor`, `moderate`, `severe`.
 - **Vai trò:** lượng hóa mức độ nghiêm trọng tổng quát của hư hỏng trong ảnh để hỗ trợ bước điều chỉnh giá.
 - **Mô hình chính:** ConvNeXt-Tiny, được chọn sau khi so sánh với ResNet18, ResNet50, EfficientNet-B0 và EfficientNet-B2.
+- **Checkpoint đang dùng:** `Models/ConvNeXt.pkl`.
 
 ### 2.3 XGBoost — Base Price Prediction
 
