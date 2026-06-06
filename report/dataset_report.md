@@ -31,20 +31,23 @@ Dự án sử dụng ba nhóm dữ liệu chính:
 ### 2.1. Severity classification dataset
 
 - **Mục đích:** huấn luyện mô hình CNN để phân loại mức độ hư hỏng thành `minor`, `moderate`, `severe`.
-- **Nguồn:** bộ dữ liệu `car-damage-detection` trên Kaggle.
+- **Nguồn:** bộ dữ liệu `car-damage-detection` trên Kaggle: <https://www.kaggle.com/datasets/asfarhossainsitab/car-damage-detection>.
 - **Cách sử dụng trong dự án:** dùng ảnh full trong severity dataset để huấn luyện và đánh giá bài toán image classification.
 
 ### 2.2. Damage detection dataset (YOLO)
 
 - **Mục đích:** huấn luyện YOLO để phát hiện các vùng hư hỏng trên xe.
-- **Nguồn gốc dữ liệu:** lấy từ phần `CarDD_COCO` trong bộ dữ liệu `car-damage-detection` trên Kaggle.
-- **Tiền xử lý / chuyển đổi:** dữ liệu được đưa lên Roboflow và xuất lại theo định dạng YOLO để thuận tiện cho quá trình huấn luyện. Vì vậy, cấu trúc dữ liệu hiện tại dùng file cấu hình `data.yaml` và các thư mục `train`, `val`, `test` thay cho cách tổ chức annotation kiểu COCO ban đầu.
-- **Phiên bản dữ liệu cuối:** ban đầu dự án dùng khoảng **4000 ảnh** cho các run nền tảng như `s_89`. Sau đó, dự án tạo phiên bản **merge_Data** bằng cách bổ sung thêm **2307 ảnh** có chủ đích cho ba lớp yếu nhất là `crack`, `scratch` và `dent`. Việc bổ sung này không áp dụng đều cho toàn bộ nhãn mà tập trung vào các lớp khó nhằm cải thiện khả năng phát hiện vết nứt, vết xước và vết móp.
+- **Nguồn gốc dữ liệu:** lấy từ phần `CarDD_COCO` trong bộ dữ liệu `car-damage-detection` trên Kaggle: <https://www.kaggle.com/datasets/asfarhossainsitab/car-damage-detection>.
+- **Nguồn dữ liệu bổ sung:** sau giai đoạn baseline, dự án bổ sung thêm **2307 ảnh** từ Roboflow Universe, lấy chủ yếu từ hai nguồn:
+  - AutoDentify Car Damage Detection: <https://universe.roboflow.com/autodentify/car-damage-detection-ggmju>
+  - Scratch and Dent: <https://universe.roboflow.com/nibm-7v215/scratch-and-dent-xvjy5>
+- **Tiền xử lý / chuyển đổi:** dữ liệu gốc từ Kaggle được tải về ở định dạng COCO, sau đó được upload lên Roboflow để chuyển đổi và xuất lại theo định dạng YOLOv8. Vì vậy, cấu trúc dữ liệu hiện tại dùng file cấu hình `data.yaml` và các thư mục `train`, `val`, `test` thay cho cách tổ chức annotation kiểu COCO ban đầu.
+- **Phiên bản dữ liệu cuối:** ban đầu dự án dùng khoảng **4000 ảnh** từ Kaggle cho các run nền tảng như `s_89`. Sau đó, dự án tạo phiên bản **merge_Data** bằng cách bổ sung thêm **2307 ảnh** có chủ đích từ Roboflow Universe cho ba lớp yếu nhất là `crack`, `scratch` và `dent`. Việc bổ sung này không áp dụng đều cho toàn bộ nhãn mà tập trung vào các lớp khó nhằm cải thiện khả năng phát hiện vết nứt, vết xước và vết móp.
 
 ### 2.3. Tabular price dataset
 
 - **Mục đích:** huấn luyện mô hình XGBoost để dự đoán giá cơ sở của xe từ các đặc trưng có cấu trúc.
-- **Nguồn:** bộ dữ liệu `used-cars-price-prediction` trên Kaggle.
+- **Nguồn:** bộ dữ liệu `used-cars-price-prediction` trên Kaggle: <https://www.kaggle.com/datasets/avikasliwal/used-cars-price-prediction>.
 - **Cách sử dụng trong dự án:** dữ liệu được giữ nguyên ở dạng bảng với các file `train-dataset.csv` và `test-dataset.csv`.
 
 ---
@@ -121,7 +124,7 @@ Dữ liệu từ `train-dataset.csv` và `test-dataset.csv` được dùng để
 
 ### 4.2. Nhánh damage detection
 
-Dữ liệu damage detection được sử dụng trong các notebook huấn luyện YOLO nhằm phát hiện các vùng hư hỏng trên thân xe. Dataset ảnh được tổ chức theo định dạng YOLO trong môi trường train, còn repository hiện tại lưu lại notebook, checkpoint và các kết quả quan sát trong `Quan_sat/yolo_car_report/`. Phiên bản dữ liệu cuối được dùng để chọn mô hình là `merge_Data`, được mở rộng từ dataset gốc khoảng 4000 ảnh bằng cách thêm 2307 ảnh cho các lớp `crack`, `scratch` và `dent`. Mô hình này cung cấp các thông tin như:
+Dữ liệu damage detection được sử dụng trong các notebook huấn luyện YOLO nhằm phát hiện các vùng hư hỏng trên thân xe. Dataset ảnh gốc được lấy từ `CarDD_COCO` trên Kaggle ở định dạng COCO, sau đó upload lên Roboflow để chuyển đổi sang định dạng YOLOv8. Repository hiện tại lưu lại notebook, checkpoint và các kết quả quan sát trong `Quan_sat/yolo_car_report/`. Phiên bản dữ liệu cuối được dùng để chọn mô hình là `merge_Data`, được mở rộng từ dataset gốc khoảng 4000 ảnh bằng cách thêm 2307 ảnh từ Roboflow Universe cho các lớp `crack`, `scratch` và `dent`. Mô hình này cung cấp các thông tin như:
 
 - số lượng vùng hư hỏng,
 - loại hư hỏng,
@@ -162,6 +165,19 @@ Các mô hình CNN đã được thử nghiệm gồm:
 | `ResNet50.ipynb`        | ResNet50        |       val_acc = 0.8128 |        0.7026 |        0.7043 |
 | `ConvNeXt_Tiny.ipynb`   | ConvNeXt-Tiny   |  val_macro_f1 = 0.8342 |        0.7077 |        0.7084 |
 
+Các mô hình CNN được train theo quy trình transfer learning hai phase. Phase 1 chỉ train classifier/head trên backbone pretrained. Phase 2 fine-tune thêm các block cuối của backbone cùng classifier:
+
+| Notebook | Backbone | Classifier/head thay thế | Phase 1 train | Phase 2 fine-tune |
+| --- | --- | --- | --- | --- |
+| `cnn_train_car.ipynb` | ResNet18 bản thử nghiệm ban đầu | `fc = Linear(..., 3)` | `fc` | `layer4 + fc` |
+| `resnet_18_new.ipynb` | ResNet18 | `fc = Dropout(0.35) + Linear(..., 3)` | `fc` | `layer4 + fc` |
+| `EfficientNet_B0.ipynb` | EfficientNet-B0 | `classifier = Dropout(0.40) + Linear(..., 3)` | `classifier` | `features[-2:] + classifier` |
+| `Efficient_B2.ipynb` | EfficientNet-B2 | `classifier = Dropout(0.40) + Linear(..., 3)` | `classifier` | `features[-2:] + classifier` |
+| `ResNet50.ipynb` | ResNet50 | `fc = Dropout(0.35) + Linear(..., 3)` | `fc` | `layer4 + fc` |
+| `ConvNeXt_Tiny.ipynb` | ConvNeXt-Tiny | `classifier[2] = Linear(..., 3)` | `classifier` | `features[-2:] + classifier` |
+
+Các classifier/head đều đưa ra ba lớp severity: `minor`, `moderate`, `severe`. Với ResNet, block cuối được fine-tune là `layer4`; với EfficientNet và ConvNeXt-Tiny, các block cuối được fine-tune là `features[-2:]`.
+
 ConvNeXt-Tiny được chọn làm mô hình CNN chính vì đạt kết quả tốt nhất trong nhóm mô hình đã thử trên cả validation macro F1 và test macro F1. Ngoài ra, ConvNeXt-Tiny có kiến trúc hiện đại hơn ResNet18, phù hợp hơn với bài toán phân loại ảnh hư hỏng có nhiều chi tiết nhỏ, phản xạ ánh sáng và khác biệt mờ giữa `minor`, `moderate`, `severe`.
 
 ### 4.4. Lớp kết hợp cuối cùng
@@ -198,7 +214,7 @@ hệ thống áp dụng một lớp **rule-based adjustment** để ước lư�
 
 - **Kiểu dữ liệu:** ảnh + annotation theo định dạng YOLO.
 - **Bài toán:** object detection.
-- **Đặc điểm:** dữ liệu được chuyển đổi từ nguồn COCO sang định dạng YOLO để phù hợp với quá trình huấn luyện bằng YOLOv8.
+- **Đặc điểm:** dữ liệu gốc từ Kaggle ở định dạng COCO được chuyển sang YOLOv8 thông qua Roboflow. Phiên bản `merge_Data` sau đó bổ sung thêm ảnh từ Roboflow Universe để tăng dữ liệu cho các lớp khó `crack`, `scratch` và `dent`.
 
 ### 5.3. Dữ liệu tabular pricing
 
@@ -212,6 +228,8 @@ hệ thống áp dụng một lớp **rule-based adjustment** để ước lư�
 ## 6. Nguồn gốc dữ liệu và tính nhất quán
 
 Ba nhóm dữ liệu trong dự án đến từ các nguồn khác nhau và phục vụ các mục tiêu khác nhau, do đó đây là một **modular dataset design** thay vì một tập dữ liệu đồng bộ hoàn toàn theo từng chiếc xe.
+
+Cụ thể, dữ liệu ảnh cho nhánh CNN severity classification xuất phát từ bộ `car-damage-detection` trên Kaggle: <https://www.kaggle.com/datasets/asfarhossainsitab/car-damage-detection>. Với nhánh YOLO damage detection, dữ liệu baseline cũng lấy từ phần `CarDD_COCO` của bộ Kaggle trên, sau đó được chuyển từ COCO sang YOLOv8 bằng Roboflow. Phiên bản YOLO cuối `merge_Data` có bổ sung thêm 2307 ảnh từ Roboflow Universe, gồm AutoDentify Car Damage Detection (<https://universe.roboflow.com/autodentify/car-damage-detection-ggmju>) và Scratch and Dent (<https://universe.roboflow.com/nibm-7v215/scratch-and-dent-xvjy5>). Dữ liệu bảng cho nhánh XGBoost price regression sử dụng bộ `used-cars-price-prediction` trên Kaggle: <https://www.kaggle.com/datasets/avikasliwal/used-cars-price-prediction>.
 
 Điều này có nghĩa là:
 
@@ -235,7 +253,7 @@ Ba nhánh dữ liệu được huấn luyện tương đối độc lập. Đi�
 
 ### 7.3. Chất lượng đầu vào phụ thuộc vào quá trình chuyển đổi định dạng
 
-Riêng với nhánh detection, dữ liệu gốc COCO đã được đưa qua Roboflow rồi xuất lại theo định dạng YOLO. Việc này thuận tiện cho huấn luyện nhưng cần đảm bảo annotation được giữ nhất quán sau khi chuyển đổi.
+Riêng với nhánh detection, dữ liệu gốc COCO đã được đưa qua Roboflow rồi xuất lại theo định dạng YOLOv8. Ngoài ra, phiên bản `merge_Data` còn kết hợp thêm dữ liệu từ Roboflow Universe. Việc này thuận tiện cho huấn luyện và mở rộng tập ảnh, nhưng cần đảm bảo annotation được giữ nhất quán sau khi chuyển đổi và sau khi merge nhiều nguồn dữ liệu.
 
 ---
 

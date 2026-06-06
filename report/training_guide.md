@@ -55,6 +55,8 @@ Mục tiêu của file này là trả lời các câu hỏi sau:
 
 ### 3.1 YOLO Dataset
 
+Nguồn dữ liệu gốc cho nhánh YOLO là bộ `car-damage-detection` trên Kaggle: <https://www.kaggle.com/datasets/asfarhossainsitab/car-damage-detection>. Trong dự án, phần detection được lấy từ dữ liệu `CarDD_COCO`. Vì dữ liệu tải về ban đầu ở định dạng COCO, dự án đã upload dữ liệu lên Roboflow để chuyển đổi và export lại theo định dạng YOLOv8, thuận tiện cho quá trình huấn luyện bằng Ultralytics.
+
 Dataset detection chính của dự án hiện tại là bộ dữ liệu theo format YOLO với 6 class:
 
 - `crack`
@@ -64,7 +66,7 @@ Dataset detection chính của dự án hiện tại là bộ dữ liệu theo f
 - `scratch`
 - `tire flat`
 
-Phiên bản dữ liệu dùng cho mô hình YOLO cuối là **merge_Data**. Dataset ban đầu có khoảng **4000 ảnh** và được dùng cho các run baseline như `s_89`. Sau đó, dự án bổ sung thêm **2307 ảnh** cho ba lớp yếu nhất là `crack`, `scratch` và `dent`, nâng tổng số ảnh lên khoảng **6307 ảnh**. Việc bổ sung dữ liệu có chủ đích này nhằm cải thiện khả năng phát hiện các hư hỏng nhỏ, mảnh và dễ bị bỏ sót, chứ không phải tăng đều dữ liệu cho tất cả các nhãn.
+Phiên bản dữ liệu dùng cho mô hình YOLO cuối là **merge_Data**. Dataset ban đầu có khoảng **4000 ảnh** và được dùng cho các run baseline như `s_89`. Sau đó, dự án bổ sung thêm **2307 ảnh** cho ba lớp yếu nhất là `crack`, `scratch` và `dent`, nâng tổng số ảnh lên khoảng **6307 ảnh**. Dữ liệu bổ sung được lấy từ Roboflow Universe, chủ yếu từ hai nguồn AutoDentify Car Damage Detection (<https://universe.roboflow.com/autodentify/car-damage-detection-ggmju>) và Scratch and Dent (<https://universe.roboflow.com/nibm-7v215/scratch-and-dent-xvjy5>). Việc bổ sung dữ liệu có chủ đích này nhằm cải thiện khả năng phát hiện các hư hỏng nhỏ, mảnh và dễ bị bỏ sót, chứ không phải tăng đều dữ liệu cho tất cả các nhãn.
 
 ### Thư mục tham khảo trong môi trường train
 
@@ -99,6 +101,8 @@ Trong các run YOLO của dự án, metric được in sau mỗi epoch là metri
 
 ### 3.2 CNN Severity Dataset
 
+Nguồn dữ liệu cho nhánh severity classification cũng là bộ `car-damage-detection` trên Kaggle: <https://www.kaggle.com/datasets/asfarhossainsitab/car-damage-detection>. Khác với YOLO, nhánh CNN sử dụng ảnh full và nhãn mức độ hư hỏng để phân loại ảnh thành ba mức độ.
+
 Dataset severity classification gồm 3 lớp:
 
 - `minor`
@@ -114,6 +118,8 @@ Khuyến nghị:
 - ưu tiên macro F1 bên cạnh accuracy để tránh chọn mô hình chỉ tốt trên lớp chiếm ưu thế.
 
 ### 3.3 XGBoost Dataset
+
+Nguồn dữ liệu bảng cho nhánh dự đoán giá là bộ `used-cars-price-prediction` trên Kaggle: <https://www.kaggle.com/datasets/avikasliwal/used-cars-price-prediction>. Dataset này có ground truth là giá xe cũ, được dùng để huấn luyện mô hình hồi quy dự đoán base price.
 
 Dataset tabular dùng để dự đoán giá xe từ các feature có cấu trúc như:
 
@@ -169,7 +175,7 @@ Dự án đã thử các hướng sau cho bài toán damage detection:
    - `YOLOv8s`
    - `YOLOv8m`
 2. Chọn `YOLOv8s` làm baseline phù hợp nhất về cân bằng tốc độ và độ chính xác.
-3. Tạo phiên bản dataset **merge_Data** bằng cách thêm 2307 ảnh cho các lớp khó `dent`, `scratch`, `crack`.
+3. Tạo phiên bản dataset **merge_Data** bằng cách thêm 2307 ảnh từ Roboflow Universe cho các lớp khó `dent`, `scratch`, `crack`.
 4. Train lại YOLOv8s trên `merge_Data` với cùng cấu hình `epochs=100`, `batch=16`, `imgsz=640`.
 
 ### 5.2 Kết luận từ phiên bản merge_Data
@@ -305,15 +311,28 @@ Metric chính:
 
 Không nên chọn mô hình chỉ theo Accuracy vì `minor` và `moderate` có thể chồng lấn.
 
+Quy trình huấn luyện CNN dùng **transfer learning hai phase**. Phase 1 đóng băng backbone và chỉ train classifier/head. Phase 2 mở băng các block cuối cùng với classifier để mô hình học thêm đặc trưng riêng của ảnh hư hỏng xe, nhưng vẫn hạn chế cập nhật quá nhiều trọng số pretrained.
+
+| Notebook                | Backbone                        | Classifier/head thay thế                      | Phase 1 train | Phase 2 fine-tune            |
+| ----------------------- | ------------------------------- | --------------------------------------------- | ------------- | ---------------------------- |
+| `cnn_train_car.ipynb`   | ResNet18 bản thử nghiệm ban đầu | `fc = Linear(..., 3)`                         | `fc`          | `layer4 + fc`                |
+| `resnet_18_new.ipynb`   | ResNet18                        | `fc = Dropout(0.35) + Linear(..., 3)`         | `fc`          | `layer4 + fc`                |
+| `EfficientNet_B0.ipynb` | EfficientNet-B0                 | `classifier = Dropout(0.40) + Linear(..., 3)` | `classifier`  | `features[-2:] + classifier` |
+| `Efficient_B2.ipynb`    | EfficientNet-B2                 | `classifier = Dropout(0.40) + Linear(..., 3)` | `classifier`  | `features[-2:] + classifier` |
+| `ResNet50.ipynb`        | ResNet50                        | `fc = Dropout(0.35) + Linear(..., 3)`         | `fc`          | `layer4 + fc`                |
+| `ConvNeXt_Tiny.ipynb`   | ConvNeXt-Tiny                   | `classifier[2] = Linear(..., 3)`              | `classifier`  | `features[-2:] + classifier` |
+
+Tất cả các mô hình đều dự đoán ba lớp severity: `minor`, `moderate`, `severe`. Với ResNet, phase 2 mở `layer4` vì đây là stage residual cuối. Với EfficientNet-B0, EfficientNet-B2 và ConvNeXt-Tiny, phase 2 mở `features[-2:]` vì đây là nhóm block cuối trong backbone.
+
 Các notebook CNN đã thử nghiệm:
 
-| Notebook | Backbone | Best validation metric | Test accuracy | Test macro F1 |
-| --- | --- | ---: | ---: | ---: |
-| `resnet_18_new.ipynb` | ResNet18 | val_acc = 0.8209 | 0.6564 | 0.6490 |
-| `EfficientNet_B0.ipynb` | EfficientNet-B0 | val_macro_f1 = 0.7945 | 0.6821 | 0.6817 |
-| `Efficient_B2.ipynb` | EfficientNet-B2 | val_macro_f1 = 0.8022 | 0.6974 | 0.6954 |
-| `ResNet50.ipynb` | ResNet50 | val_acc = 0.8128 | 0.7026 | 0.7043 |
-| `ConvNeXt_Tiny.ipynb` | ConvNeXt-Tiny | val_macro_f1 = 0.8342 | 0.7077 | 0.7084 |
+| Notebook                | Backbone        | Best validation metric | Test accuracy | Test macro F1 |
+| ----------------------- | --------------- | ---------------------: | ------------: | ------------: |
+| `resnet_18_new.ipynb`   | ResNet18        |       val_acc = 0.8209 |        0.6564 |        0.6490 |
+| `EfficientNet_B0.ipynb` | EfficientNet-B0 |  val_macro_f1 = 0.7945 |        0.6821 |        0.6817 |
+| `Efficient_B2.ipynb`    | EfficientNet-B2 |  val_macro_f1 = 0.8022 |        0.6974 |        0.6954 |
+| `ResNet50.ipynb`        | ResNet50        |       val_acc = 0.8128 |        0.7026 |        0.7043 |
+| `ConvNeXt_Tiny.ipynb`   | ConvNeXt-Tiny   |  val_macro_f1 = 0.8342 |        0.7077 |        0.7084 |
 
 ConvNeXt-Tiny được chọn làm mô hình CNN chính vì có test accuracy và test macro F1 cao nhất trong các mô hình đã thử. Mô hình này cũng đạt validation macro F1 cao nhất, cho thấy khả năng cân bằng giữa ba lớp tốt hơn so với ResNet18 và các biến thể EfficientNet trong thí nghiệm hiện tại.
 
