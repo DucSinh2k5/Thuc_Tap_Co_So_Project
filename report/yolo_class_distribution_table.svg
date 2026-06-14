@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="680" viewBox="0 0 1500 680">
+  <rect width="1500" height="680" fill="#ffffff"/>
+
+  <text x="80" y="72" font-family="Arial, Segoe UI, sans-serif" font-size="34" font-weight="700" fill="#111827">
+    Phân bố nhãn trong dataset YOLO merge_Data
+  </text>
+  <text x="80" y="112" font-family="Arial, Segoe UI, sans-serif" font-size="22" fill="#4B5563">
+    Các lớp nhiễu a, e, f đã được loại bỏ khỏi thống kê
+  </text>
+
+  <!-- table header -->
+  <line x1="80" y1="160" x2="1420" y2="160" stroke="#D1D5DB" stroke-width="1.5"/>
+  <text x="80" y="142" font-family="Arial, Segoe UI, sans-serif" font-size="24" font-weight="700" fill="#111827">Nhãn</text>
+  <text x="455" y="142" font-family="Arial, Segoe UI, sans-serif" font-size="24" font-weight="700" fill="#111827">Số ảnh chứa nhãn</text>
+  <text x="820" y="142" font-family="Arial, Segoe UI, sans-serif" font-size="24" font-weight="700" fill="#111827">Số bounding box</text>
+  <text x="1215" y="142" font-family="Arial, Segoe UI, sans-serif" font-size="24" font-weight="700" fill="#111827">Tỷ lệ</text>
+
+  <!-- row 1 -->
+  <text x="80" y="212" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">crack</text>
+  <text x="515" y="212" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">-</text>
+  <text x="910" y="212" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">898</text>
+  <text x="1260" y="212" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">10,3%</text>
+  <line x1="80" y1="245" x2="1420" y2="245" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- row 2 -->
+  <text x="80" y="287" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">dent</text>
+  <text x="515" y="287" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">-</text>
+  <text x="910" y="287" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">2.543</text>
+  <text x="1260" y="287" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">29,1%</text>
+  <line x1="80" y1="320" x2="1420" y2="320" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- row 3 -->
+  <text x="80" y="362" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">scratch</text>
+  <text x="515" y="362" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">-</text>
+  <text x="910" y="362" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">3.595</text>
+  <text x="1260" y="362" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">41,1%</text>
+  <line x1="80" y1="395" x2="1420" y2="395" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- row 4 -->
+  <text x="80" y="437" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">lamp_broken</text>
+  <text x="515" y="437" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">-</text>
+  <text x="910" y="437" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">704</text>
+  <text x="1260" y="437" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">8,1%</text>
+  <line x1="80" y1="470" x2="1420" y2="470" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- row 5 -->
+  <text x="80" y="512" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">glass_broken</text>
+  <text x="515" y="512" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">-</text>
+  <text x="910" y="512" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">681</text>
+  <text x="1260" y="512" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">7,8%</text>
+  <line x1="80" y1="545" x2="1420" y2="545" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- row 6 -->
+  <text x="80" y="587" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">tire_flat</text>
+  <text x="515" y="587" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">-</text>
+  <text x="910" y="587" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">319</text>
+  <text x="1260" y="587" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">3,6%</text>
+  <line x1="80" y1="620" x2="1420" y2="620" stroke="#E5E7EB" stroke-width="1"/>
+
+  <text x="80" y="655" font-family="Arial, Segoe UI, sans-serif" font-size="20" fill="#6B7280">
+    Ghi chú: cột “Số bounding box” lấy từ thống kê lớp trên Roboflow; cột “Số ảnh chứa nhãn” cần thống kê từ file label YOLO vì một ảnh có thể chứa nhiều bounding box.
+  </text>
+</svg>

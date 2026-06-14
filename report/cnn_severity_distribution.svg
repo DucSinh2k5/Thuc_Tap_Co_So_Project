@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="860" viewBox="0 0 1600 860">
+  <rect width="1600" height="860" fill="#ffffff"/>
+
+  <text x="90" y="92" font-family="Arial, Segoe UI, sans-serif" font-size="50" font-weight="700" fill="#111827">
+    Phân bố ảnh theo lớp severity
+  </text>
+  <text x="90" y="140" font-family="Arial, Segoe UI, sans-serif" font-size="26" fill="#4B5563">
+    Dataset CNN severity classification - folder thực tế: 01-minor, 02-moderate, 03-severe
+  </text>
+
+  <rect x="1170" y="65" width="340" height="58" rx="18" fill="#F3F4F6" stroke="#E5E7EB"/>
+  <text x="1195" y="103" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#374151">
+    Tổng số ảnh: 3.335
+  </text>
+
+  <!-- Table -->
+  <text x="90" y="228" font-family="Arial, Segoe UI, sans-serif" font-size="30" font-weight="700" fill="#111827">Bảng thống kê</text>
+  <line x1="90" y1="260" x2="1510" y2="260" stroke="#D1D5DB" stroke-width="1.5"/>
+  <text x="90" y="244" font-family="Arial, Segoe UI, sans-serif" font-size="23" font-weight="700" fill="#111827">Folder</text>
+  <text x="430" y="244" font-family="Arial, Segoe UI, sans-serif" font-size="23" font-weight="700" fill="#111827">01-minor</text>
+  <text x="700" y="244" font-family="Arial, Segoe UI, sans-serif" font-size="23" font-weight="700" fill="#111827">02-moderate</text>
+  <text x="1000" y="244" font-family="Arial, Segoe UI, sans-serif" font-size="23" font-weight="700" fill="#111827">03-severe</text>
+  <text x="1320" y="244" font-family="Arial, Segoe UI, sans-serif" font-size="23" font-weight="700" fill="#111827">Tổng</text>
+
+  <text x="90" y="315" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">training</text>
+  <text x="455" y="315" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">1.076</text>
+  <text x="735" y="315" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">924</text>
+  <text x="1035" y="315" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">945</text>
+  <text x="1328" y="315" font-family="Arial, Segoe UI, sans-serif" font-size="24" font-weight="700" fill="#111827">2.945</text>
+  <line x1="90" y1="350" x2="1510" y2="350" stroke="#E5E7EB" stroke-width="1"/>
+
+  <text x="90" y="405" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">validation</text>
+  <text x="465" y="405" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">82</text>
+  <text x="735" y="405" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">157</text>
+  <text x="1035" y="405" font-family="Arial, Segoe UI, sans-serif" font-size="24" fill="#111827">151</text>
+  <text x="1342" y="405" font-family="Arial, Segoe UI, sans-serif" font-size="24" font-weight="700" fill="#111827">390</text>
+  <line x1="90" y1="440" x2="1510" y2="440" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- Legend -->
+  <text x="90" y="515" font-family="Arial, Segoe UI, sans-serif" font-size="30" font-weight="700" fill="#111827">Biểu diễn trực quan</text>
+  <rect x="90" y="545" width="22" height="22" rx="6" fill="#22C55E"/>
+  <text x="123" y="564" font-family="Arial, Segoe UI, sans-serif" font-size="22" fill="#374151">01-minor</text>
+  <rect x="265" y="545" width="22" height="22" rx="6" fill="#F59E0B"/>
+  <text x="298" y="564" font-family="Arial, Segoe UI, sans-serif" font-size="22" fill="#374151">02-moderate</text>
+  <rect x="495" y="545" width="22" height="22" rx="6" fill="#EF4444"/>
+  <text x="528" y="564" font-family="Arial, Segoe UI, sans-serif" font-size="22" fill="#374151">03-severe</text>
+
+  <!-- Stacked bars, max width 1100 -->
+  <text x="90" y="645" font-family="Arial, Segoe UI, sans-serif" font-size="25" font-weight="700" fill="#111827">training</text>
+  <rect x="260" y="610" width="1100" height="56" rx="16" fill="#F3F4F6"/>
+  <rect x="260" y="610" width="402" height="56" rx="16" fill="#22C55E"/>
+  <rect x="662" y="610" width="345" height="56" fill="#F59E0B"/>
+  <rect x="1007" y="610" width="353" height="56" rx="16" fill="#EF4444"/>
+  <text x="430" y="646" font-family="Arial, Segoe UI, sans-serif" font-size="21" font-weight="700" fill="#ffffff">36,5%</text>
+  <text x="804" y="646" font-family="Arial, Segoe UI, sans-serif" font-size="21" font-weight="700" fill="#ffffff">31,4%</text>
+  <text x="1152" y="646" font-family="Arial, Segoe UI, sans-serif" font-size="21" font-weight="700" fill="#ffffff">32,1%</text>
+
+  <text x="90" y="745" font-family="Arial, Segoe UI, sans-serif" font-size="25" font-weight="700" fill="#111827">validation</text>
+  <rect x="260" y="710" width="1100" height="56" rx="16" fill="#F3F4F6"/>
+  <rect x="260" y="710" width="231" height="56" rx="16" fill="#22C55E"/>
+  <rect x="491" y="710" width="443" height="56" fill="#F59E0B"/>
+  <rect x="934" y="710" width="426" height="56" rx="16" fill="#EF4444"/>
+  <text x="343" y="746" font-family="Arial, Segoe UI, sans-serif" font-size="21" font-weight="700" fill="#ffffff">21,0%</text>
+  <text x="684" y="746" font-family="Arial, Segoe UI, sans-serif" font-size="21" font-weight="700" fill="#ffffff">40,3%</text>
+  <text x="1118" y="746" font-family="Arial, Segoe UI, sans-serif" font-size="21" font-weight="700" fill="#ffffff">38,7%</text>
+
+  <text x="90" y="820" font-family="Arial, Segoe UI, sans-serif" font-size="21" fill="#6B7280">
+    Ghi chú: tập training khá cân bằng giữa ba lớp; tập validation có ít ảnh minor hơn moderate và severe.
+  </text>
+</svg>

@@ -6,7 +6,7 @@ import cv2
 from PIL import Image
 from ultralytics import YOLO
 
-DUONG_DAN_MO_HINH = Path(__file__).resolve().parents[1] / "Weights" / "best_97.pt"
+DUONG_DAN_MO_HINH = Path(__file__).resolve().parents[1] / "Models" / "best.pt"
 KICH_THUOC_ANH_YOLO = 640
 NGUONG_CONF = 0.25
 NGUONG_IOU = 0.45
