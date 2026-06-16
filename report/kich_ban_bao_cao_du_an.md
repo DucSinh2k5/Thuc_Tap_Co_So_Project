@@ -1,112 +1,114 @@
-# Kich Ban Bao Cao Du An
+# Kịch Bản Báo Cáo Dự Án
 
-## 0. Cach Dung File Nay
+## 0. Cách Dùng File Này
 
-File nay la ghi chu noi khi bao cao. Em co the dung theo 3 muc:
+File này là ghi chú để em luyện nói và dùng khi báo cáo với thầy. Có thể dùng theo 3 mức:
 
-- **Noi ngan 7-10 phut:** doc cac muc "Can noi".
-- **Bi hoi sau:** xem muc "Neu thay hoi".
-- **Can mo code/minh chung:** xem muc "File/hang can chi".
+- **Nói ngắn 7-10 phút:** đọc phần `Kịch bản nói 7-10 phút`.
+- **Trình bày đầy đủ:** đi theo từng mục từ trên xuống.
+- **Bị hỏi sâu:** xem phần `Nếu thầy hỏi`.
 
-Chu de bao cao nen nhan manh:
+Thông điệp chính nên nhấn mạnh:
 
-> Du an cua em la mot he thong uoc luong gia xe cu co xet den tinh trang hu hong ngoai that. He thong khong chi du doan gia tu thong tin bang, ma con nhan anh xe, phat hien hu hong, danh gia muc do hu hong va dieu chinh gia cuoi cung.
-
----
-
-## 1. Mo Dau Bao Cao
-
-### Can noi
-
-Kinh thua thay, trong do an nay em xay dung mot he thong demo du doan gia xe cu co xet den tinh trang ngoai that cua xe.
-
-Bai toan cua em gom hai loai du lieu:
-
-- **Du lieu bang**: cac thong tin xe nhu hang xe, dong xe, nam san xuat, so km da di, hop so, loai nhien lieu, dung tich dong co, cong suat...
-- **Du lieu anh**: anh xe de phat hien cac hu hong nhu vet xuoc, vet mop, vet nut, den vo, kinh vo, lop xep...
-
-Dau ra cua he thong gom:
-
-- **Base price**: gia co so du doan tu thong tin xe bang mo hinh XGBoost.
-- **Damage detection**: danh sach cac vung hu hong tren anh bang YOLO.
-- **Severity classification**: muc do hu hong `minor`, `moderate`, `severe` bang CNN ConvNeXt-Tiny.
-- **Final adjusted price**: gia cuoi cung sau khi tru theo muc hu hong bang tang rule-based adjustment.
-
-### Diem can nhan manh
-
-Day khong phai la mot mo hinh multimodal end-to-end hoc truc tiep gia sau hu hong, vi hien tai khong co ground truth cho **final price after damage**. Vi vay em thiet ke theo huong **hybrid pipeline**:
-
-1. XGBoost hoc gia thi truong co so tu du lieu bang.
-2. YOLO va CNN trich xuat tin hieu hu hong tu anh.
-3. Mot tang luat ket hop cac tin hieu nay de dieu chinh gia.
+> Dự án của em là một hệ thống ước lượng giá xe cũ có xét đến tình trạng hư hỏng ngoại thất. Hệ thống không chỉ dự đoán giá từ thông tin dạng bảng, mà còn nhận ảnh xe, phát hiện hư hỏng, đánh giá mức độ hư hỏng và điều chỉnh giá cuối cùng.
 
 ---
 
-## 2. Tong Quan Kien Truc He Thong
+## 1. Mở Đầu Báo Cáo
 
-### Can noi
+### Cần nói
 
-He thong cua em co 3 nhanh chinh:
+Kính thưa thầy, trong đồ án này em xây dựng một hệ thống demo dự đoán giá xe cũ có xét đến tình trạng ngoại thất của xe.
 
-| Nhanh | Nhiem vu | Mo hinh/file chinh | Dau ra |
+Bài toán của em gồm hai nhóm dữ liệu chính:
+
+- **Dữ liệu bảng:** thông tin xe như hãng xe, dòng xe, năm sản xuất, số km đã đi, hộp số, loại nhiên liệu, dung tích động cơ, công suất, số chỗ ngồi.
+- **Dữ liệu ảnh:** ảnh xe dùng để phát hiện các hư hỏng như vết xước, vết móp, vết nứt, đèn vỡ, kính vỡ, lốp xẹp.
+
+Đầu ra của hệ thống gồm:
+
+- **Base price:** giá cơ sở được dự đoán từ thông tin xe bằng mô hình XGBoost.
+- **Damage detection:** danh sách vùng hư hỏng trên ảnh bằng YOLO.
+- **Severity classification:** mức độ hư hỏng `minor`, `moderate`, `severe` bằng CNN ConvNeXt-Tiny.
+- **Final adjusted price:** giá cuối cùng sau khi trừ theo mức hư hỏng bằng tầng rule-based adjustment.
+
+### Điểm cần nhấn mạnh
+
+Dự án này không phải là một mô hình multimodal end-to-end học trực tiếp giá xe sau hư hỏng, vì hiện tại chưa có ground truth cho **final price after damage**.
+
+Vì vậy em thiết kế theo hướng **hybrid pipeline**:
+
+1. XGBoost học giá thị trường cơ sở từ dữ liệu bảng.
+2. YOLO và CNN trích xuất tín hiệu hư hỏng từ ảnh.
+3. Một tầng luật kết hợp các tín hiệu này để điều chỉnh giá.
+
+---
+
+## 2. Tổng Quan Kiến Trúc Hệ Thống
+
+### Cần nói
+
+Hệ thống của em có 3 nhánh chính:
+
+| Nhánh | Nhiệm vụ | Mô hình/file chính | Đầu ra |
 | --- | --- | --- | --- |
-| Tabular pricing | Du doan gia co so cua xe | XGBoost, `Models/model.pkl` | `base_price` |
-| Damage detection | Phat hien vung hu hong tren anh | YOLOv8s, `Models/best.pt` | class, confidence, bbox, area_ratio |
-| Severity classification | Phan loai muc do hu hong | ConvNeXt-Tiny, `Models/ConvNeXt.pkl` | minor/moderate/severe |
-| Rule adjustment | Tinh gia sau khi tru hu hong | `dich_vu/dinh_gia.py` | `final_price` |
+| Tabular pricing | Dự đoán giá cơ sở của xe | XGBoost, `Models/model.pkl` | `base_price` |
+| Damage detection | Phát hiện vùng hư hỏng trên ảnh | YOLOv8s, `Models/best.pt` | class, confidence, bbox, area_ratio |
+| Severity classification | Phân loại mức độ hư hỏng | ConvNeXt-Tiny, `Models/ConvNeXt.pkl` | minor/moderate/severe |
+| Rule adjustment | Tính giá sau khi trừ hư hỏng | `dich_vu/dinh_gia.py` | `final_price` |
 
-Luong chay trong app:
+Luồng chạy trong app:
 
 ```text
-Thong tin xe + anh upload
+Thông tin xe + ảnh upload
         |
-        |-- app.py chuan hoa thong tin xe
+        |-- app.py chuẩn hóa thông tin xe
         |
-        |-- XGBoost du doan base price
+        |-- XGBoost dự đoán base price
         |
-        |-- neu co anh:
-        |       |-- YOLO phat hien hu hong
-        |       |-- ConvNeXt phan loai muc do
-        |       |-- rule-based adjustment tinh tien tru
+        |-- nếu có ảnh:
+        |       |-- YOLO phát hiện hư hỏng
+        |       |-- ConvNeXt phân loại mức độ
+        |       |-- rule-based adjustment tính tiền trừ
         |
-        |-- Streamlit hien thi base price, damage deduction, final price
+        |-- Streamlit hiển thị base price, damage deduction, final price
 ```
 
-### File/hang can chi
+### File/hàm cần chỉ
 
 - `app.py`
-  - `chay_ung_dung()`: khoi tao giao dien Streamlit.
-  - `chay_pipeline(thong_tin_xe, danh_sach_anh)`: noi tat ca nhanh mo hinh lai.
-  - `chuan_hoa_thong_tin_xe(thong_tin_xe)`: bien input form thanh schema dung voi model tabular.
+  - `chay_ung_dung()`: khởi tạo giao diện Streamlit.
+  - `chay_pipeline(thong_tin_xe, danh_sach_anh)`: nối tất cả nhánh mô hình lại.
+  - `chuan_hoa_thong_tin_xe(thong_tin_xe)`: biến input form thành schema đúng với model tabular.
 - `dich_vu/dinh_gia.py`
-  - `du_doan_gia_co_ban(thong_tin_xe)`: goi XGBoost.
-  - `tinh_dieu_chinh_gia(...)`: tinh tien tru theo hu hong.
+  - `du_doan_gia_co_ban(thong_tin_xe)`: gọi XGBoost.
+  - `tinh_dieu_chinh_gia(...)`: tính tiền trừ theo hư hỏng.
 - `dich_vu/phat_hien_hu_hong.py`
-  - `phat_hien_hu_hong(danh_sach_anh)`: chay YOLO.
-  - `ve_bbox_anh(...)`: ve bounding box de hien thi.
+  - `phat_hien_hu_hong(danh_sach_anh)`: chạy YOLO.
+  - `ve_bbox_anh(...)`: vẽ bounding box để hiển thị.
 - `dich_vu/muc_do_hu_hong.py`
-  - `phan_loai_muc_do(danh_sach_anh)`: chay ConvNeXt-Tiny.
-  - `tong_hop_muc_do(...)`: tong hop so damage va muc do.
+  - `phan_loai_muc_do(danh_sach_anh)`: chạy ConvNeXt-Tiny.
+  - `tong_hop_muc_do(...)`: tổng hợp số damage và mức độ.
 
 ---
 
-## 3. Du Lieu Su Dung
+## 3. Dữ Liệu Sử Dụng
 
-### 3.1. Du lieu bang cho bai toan gia xe
+### 3.1. Dữ liệu bảng cho bài toán giá xe
 
-### Can noi
+### Cần nói
 
-Du lieu bang duoc lay tu bo **used-cars-price-prediction** tren Kaggle. Cac file trong du an:
+Dữ liệu bảng được lấy từ bộ **used-cars-price-prediction** trên Kaggle. Các file trong dự án:
 
-- `Datasets/train-dataset.csv`: du lieu train, khoang 6019 dong du lieu.
-- `Datasets/test-dataset.csv`: du lieu test, khoang 1234 dong du lieu.
-- `Datasets/train_cleaned.csv`: ban du lieu sau tien xu ly.
+- `Datasets/train-dataset.csv`: dữ liệu train, khoảng 6019 dòng dữ liệu.
+- `Datasets/test-dataset.csv`: dữ liệu test, khoảng 1234 dòng dữ liệu.
+- `Datasets/train_cleaned.csv`: bản dữ liệu sau tiền xử lý.
 
-Cot muc tieu la:
+Cột mục tiêu là:
 
-- `Price` sau khi rename thanh `Gia_theo_lakh`.
+- `Price`, sau khi rename thành `Gia_theo_lakh`.
 
-Mot so cot dau vao:
+Một số cột đầu vào:
 
 - `Name` -> `Ten_xe`
 - `Year` -> `Nam_san_xuat`
@@ -119,135 +121,135 @@ Mot so cot dau vao:
 - `Power` -> `Cong_suat_toi_da`
 - `Seats` -> `So_cho_ngoi`
 
-### Kho khan voi du lieu bang
+### Khó khăn với dữ liệu bảng
 
-- `New_Price` thieu rat nhieu, khoang 86% trong train.
-- Cac cot `Mileage`, `Engine`, `Power` co don vi dang text nhu `18.2 kmpl`, `1199 CC`, `88.7 bhp`, can tach so.
-- Co gia tri bat thuong nhu so km rat lon, so ghe bang 0, cong suat `null bhp`.
-- Cot ten xe co rat nhieu gia tri unique, nen can gop top xe/hang xe de tranh qua nhieu category hiem.
+- `New_Price` thiếu rất nhiều, khoảng 86% trong train.
+- Các cột `Mileage`, `Engine`, `Power` có đơn vị dạng text như `18.2 kmpl`, `1199 CC`, `88.7 bhp`, cần tách số.
+- Có giá trị bất thường như số km rất lớn, số ghế bằng 0, công suất `null bhp`.
+- Cột tên xe có rất nhiều giá trị unique, nên cần gộp top xe/hãng xe để tránh quá nhiều category hiếm.
 
-### 3.2. Du lieu anh cho YOLO
+### 3.2. Dữ liệu ảnh cho YOLO
 
-### Can noi
+### Cần nói
 
-Nhanh detection dung du lieu tu bo **car-damage-detection**, phan `CarDD_COCO`. Du lieu goc o dinh dang COCO, sau do duoc chuyen sang dinh dang YOLOv8 thong qua Roboflow.
+Nhánh detection dùng dữ liệu từ bộ **car-damage-detection**, phần `CarDD_COCO`. Dữ liệu gốc ở định dạng COCO, sau đó được chuyển sang định dạng YOLOv8 thông qua Roboflow.
 
-Ban dau co khoang **4000 anh**. Sau khi benchmark, em thay cac lop kho la:
+Ban đầu có khoảng **4000 ảnh**. Sau khi benchmark, em thấy các lớp khó là:
 
 - `crack`
 - `scratch`
 - `dent`
 
-Nen em bo sung them **2307 anh** tu Roboflow Universe cho cac lop nay. Dataset sau merge co khoang **6307 anh**.
+Nên em bổ sung thêm **2307 ảnh** từ Roboflow Universe cho các lớp này. Dataset sau merge có khoảng **6307 ảnh**.
 
-### 3.3. Du lieu anh cho severity classification
+### 3.3. Dữ liệu ảnh cho severity classification
 
-### Can noi
+### Cần nói
 
-Nhanh severity classification dung anh full va nhan:
+Nhánh severity classification dùng ảnh full và nhãn:
 
 - `minor`
 - `moderate`
 - `severe`
 
-Diem dang chu y la trong pipeline hien tai, CNN nhan **anh full nguoi dung upload**, khong nhan crop bbox tu YOLO. YOLO va CNN xu ly song song:
+Điểm đáng chú ý là trong pipeline hiện tại, CNN nhận **ảnh full người dùng upload**, không nhận crop bbox từ YOLO. YOLO và CNN xử lý song song:
 
-- YOLO cho biet co hu hong gi, o dau, dien tich bao nhieu.
-- CNN cho biet muc do tong quat cua anh la nhe, vua hay nang.
+- YOLO cho biết có hư hỏng gì, ở đâu, diện tích bao nhiêu.
+- CNN cho biết mức độ tổng quát của ảnh là nhẹ, vừa hay nặng.
 
 ---
 
-## 4. Quy Trinh Lam Viec Voi Du Lieu Bang
+## 4. Quy Trình Làm Việc Với Dữ Liệu Bảng
 
-### Can noi
+### Cần nói
 
-Voi nhanh tabular, em lam theo cac buoc:
+Với nhánh tabular, em làm theo các bước:
 
-1. **EDA truoc xu ly**
-   - Doc du lieu, kiem tra missing, kieu du lieu, thong ke co ban.
-   - File tham khao: `tests/test_tabular/test-dataset-tabular.ipynb`, `src/EDA_before.py`, `Quan_sat/eda_before.txt`.
+1. **EDA trước xử lý**
+   - Đọc dữ liệu, kiểm tra missing, kiểu dữ liệu, thống kê cơ bản.
+   - File tham khảo: `tests/test_tabular/test-dataset-tabular.ipynb`, `src/EDA_before.py`, `Quan_sat/eda_before.txt`.
 
-2. **Chuan hoa cot va lam sach**
-   - Rename cot sang ten ro nghia bang tieng Viet.
-   - Loc cac dong khong hop le.
-   - Tach so tu cac cot co don vi.
-   - Map category nhu hop so, nhien lieu, so lan so huu.
+2. **Chuẩn hóa cột và làm sạch**
+   - Rename cột sang tên rõ nghĩa bằng tiếng Việt.
+   - Lọc các dòng không hợp lệ.
+   - Tách số từ các cột có đơn vị.
+   - Map category như hộp số, nhiên liệu, số lần sở hữu.
    - File: `src/load_data_and_cleaning.py`.
 
 3. **Feature engineering**
-   - Tao `Tuoi_xe` tu nam san xuat.
-   - Tao `Hang_xe` tu ten xe.
-   - Tao `Km_moi_nam`.
-   - Tao `Chay_nhieu`.
-   - Tao `log_Quang_duong_da_di(km)`.
-   - Tao `Top_xe` de gop cac dong xe pho bien, xe it gap dua ve `Other`.
+   - Tạo `Tuoi_xe` từ năm sản xuất.
+   - Tạo `Hang_xe` từ tên xe.
+   - Tạo `Km_moi_nam`.
+   - Tạo `Chay_nhieu`.
+   - Tạo `log_Quang_duong_da_di(km)`.
+   - Tạo `Top_xe` để gộp các dòng xe phổ biến, xe ít gặp đưa về `Other`.
    - File: `src/feature_engineering.py`.
 
-4. **Xu ly missing va outlier**
-   - Numeric dung median.
-   - Categorical dung mode/Unknown.
-   - Outlier duoc clip theo IQR.
-   - Quan trong: cac tham so median, imputer, top category, outlier bounds duoc fit tren train roi dung lai cho val/test de tranh data leakage.
+4. **Xử lý missing và outlier**
+   - Numeric dùng median.
+   - Categorical dùng mode/Unknown.
+   - Outlier được clip theo IQR.
+   - Quan trọng: các tham số median, imputer, top category, outlier bounds được fit trên train rồi dùng lại cho val/test để tránh data leakage.
 
-5. **Tien xu ly cho model**
+5. **Tiền xử lý cho model**
    - Numeric: impute median.
    - Categorical: `OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)`.
    - File: `src/preprocessing.py`.
 
-6. **Train va danh gia**
+6. **Train và đánh giá**
    - Chia train/validation 80/20.
-   - So sanh baseline, Random Forest va XGBoost.
-   - Chon XGBoost de trien khai.
+   - So sánh baseline, Random Forest và XGBoost.
+   - Chọn XGBoost để triển khai.
    - File: `src/train_and_evaluate.py`, `src/main.py`.
 
-### Cac ham quan trong
+### Các hàm quan trọng
 
-| File | Ham | Vai tro |
+| File | Hàm | Vai trò |
 | --- | --- | --- |
-| `src/load_data_and_cleaning.py` | `doi_ten_cot(df)` | Rename cot ve schema thong nhat |
-| `src/load_data_and_cleaning.py` | `loai_bo_hang_ban(df)` | Loc dong khong hop le |
-| `src/load_data_and_cleaning.py` | `chuyen_cot_sang_so(df)` | Tach so tu cot co don vi |
-| `src/load_data_and_cleaning.py` | `chuyen_cot_sang_category(df)` | Ma hoa nhien lieu, hop so, so huu |
-| `src/feature_engineering.py` | `tao_moi_feature(df, km_median=None)` | Tao tuoi xe, hang xe, km moi nam, log km |
+| `src/load_data_and_cleaning.py` | `doi_ten_cot(df)` | Rename cột về schema thống nhất |
+| `src/load_data_and_cleaning.py` | `loai_bo_hang_ban(df)` | Lọc dòng không hợp lệ |
+| `src/load_data_and_cleaning.py` | `chuyen_cot_sang_so(df)` | Tách số từ cột có đơn vị |
+| `src/load_data_and_cleaning.py` | `chuyen_cot_sang_category(df)` | Mã hóa nhiên liệu, hộp số, sở hữu |
+| `src/feature_engineering.py` | `tao_moi_feature(df, km_median=None)` | Tạo tuổi xe, hãng xe, km mỗi năm, log km |
 | `src/feature_engineering.py` | `xu_ly_gia_tri_thieu(df, imputers=None)` | Fit/transform missing value |
-| `src/feature_engineering.py` | `gioi_han_xe(...)`, `gioi_han_hang_xe(...)` | Gop category hiem |
+| `src/feature_engineering.py` | `gioi_han_xe(...)`, `gioi_han_hang_xe(...)` | Gộp category hiếm |
 | `src/feature_engineering.py` | `xu_ly_outlier(df, bounds=None)` | Clip outlier theo IQR |
-| `src/preprocessing.py` | `tien_xu_ly(num, cat)` | Tao ColumnTransformer |
-| `src/train_and_evaluate.py` | `compare_models(...)` | So sanh RF va XGBoost |
+| `src/preprocessing.py` | `tien_xu_ly(num, cat)` | Tạo ColumnTransformer |
+| `src/train_and_evaluate.py` | `compare_models(...)` | So sánh RF và XGBoost |
 | `src/train_and_evaluate.py` | `train_model(...)` | Train XGBoost final |
-| `src/train_and_evaluate.py` | `feature_importance_report(...)` | Xuat feature importance |
-| `src/train_and_evaluate.py` | `save(...)` | Luu model deploy vao `Models/model.pkl` |
+| `src/train_and_evaluate.py` | `feature_importance_report(...)` | Xuất feature importance |
+| `src/train_and_evaluate.py` | `save(...)` | Lưu model deploy vào `Models/model.pkl` |
 
 ---
 
-## 5. Ket Qua Nhanh Tabular
+## 5. Kết Quả Nhánh Tabular
 
-### Can noi
+### Cần nói
 
-Ket qua baseline:
+Kết quả baseline:
 
 | Baseline | RMSE | MAE | R2 |
 | --- | ---: | ---: | ---: |
 | Mean baseline | 5.7028 | 4.6119 | -0.0044 |
 | Median baseline | 5.9453 | 4.0818 | -0.0916 |
 
-Ket qua so sanh model:
+Kết quả so sánh model:
 
 | Model | RMSE | MAE | R2 validation |
 | --- | ---: | ---: | ---: |
 | Random Forest | 1.6074 | 0.9962 | 0.9202 |
 | XGBoost | 1.4144 | 0.8856 | 0.9382 |
 
-Em chon **XGBoost** vi:
+Em chọn **XGBoost** vì:
 
-- R2 validation cao hon Random Forest.
-- RMSE va MAE thap hon.
-- Phu hop voi du lieu bang co ca numeric va categorical da encode.
-- De luu va tich hop vao app bang `joblib`.
+- R2 validation cao hơn Random Forest.
+- RMSE và MAE thấp hơn.
+- Phù hợp với dữ liệu bảng có cả numeric và categorical đã encode.
+- Dễ lưu và tích hợp vào app bằng `joblib`.
 
-### Feature quan trong
+### Feature quan trọng
 
-Theo `feature_importance_xgb.csv`, cac feature quan trong nhat:
+Theo `feature_importance_xgb.csv`, các feature quan trọng nhất:
 
 | Feature | Importance |
 | --- | ---: |
@@ -267,36 +269,36 @@ Theo permutation importance:
 | `Hang_xe` | 0.0635 |
 | `Hop_so` | 0.0361 |
 
-### Cau noi goi y
+### Câu nói gợi ý
 
-> Ket qua nay cho thay mo hinh hoc duoc cac yeu to hop ly ve mat thuc te: cong suat, tuoi xe, dung tich, hang xe va hop so deu la cac yeu to anh huong manh den gia xe cu.
+> Kết quả này cho thấy mô hình học được các yếu tố hợp lý về mặt thực tế: công suất, tuổi xe, dung tích, hãng xe và hộp số đều là các yếu tố ảnh hưởng mạnh đến giá xe cũ.
 
 ---
 
-## 6. Quy Trinh Lam Viec Voi YOLO Damage Detection
+## 6. Quy Trình Làm Việc Với YOLO Damage Detection
 
-### Can noi
+### Cần nói
 
-Voi nhanh detection, muc tieu cua em la phat hien cac vung hu hong tren anh xe. Em dung YOLO vi day la mo hinh object detection nhanh, phu hop voi ung dung demo can inference truc tiep.
+Với nhánh detection, mục tiêu của em là phát hiện các vùng hư hỏng trên ảnh xe. Em dùng YOLO vì đây là mô hình object detection nhanh, phù hợp với ứng dụng demo cần inference trực tiếp.
 
-Em da thu cac huong:
+Em đã thử các hướng:
 
-- YOLOv8n: nhe, nhanh, dung lam baseline.
-- YOLOv8s: can bang tot hon giua toc do va do chinh xac.
-- YOLOv8m: lon hon nhung chi phi cao, khong phu hop bang YOLOv8s cho demo.
-- Faster R-CNN ResNet50-FPN: dung de so sanh phu.
+- YOLOv8n: nhẹ, nhanh, dùng làm baseline.
+- YOLOv8s: cân bằng tốt hơn giữa tốc độ và độ chính xác.
+- YOLOv8m: lớn hơn nhưng chi phí cao, không phù hợp bằng YOLOv8s cho demo.
+- Faster R-CNN ResNet50-FPN: dùng để so sánh phụ.
 
-Sau benchmark, em chon **YOLOv8s** va cai thien bang cach mo rong dataset, tap trung vao cac lop kho `crack`, `scratch`, `dent`.
+Sau benchmark, em chọn **YOLOv8s** và cải thiện bằng cách mở rộng dataset, tập trung vào các lớp khó `crack`, `scratch`, `dent`.
 
-### Cau hinh YOLO chinh
+### Cấu hình YOLO chính
 
-| Thong so | Gia tri |
+| Thông số | Giá trị |
 | --- | --- |
 | Model | YOLOv8s |
 | Dataset | `merge_Data` |
-| Anh goc | khoang 4000 anh |
-| Anh bo sung | 2307 anh |
-| Tong anh | khoang 6307 anh |
+| Ảnh gốc | khoảng 4000 ảnh |
+| Ảnh bổ sung | 2307 ảnh |
+| Tổng ảnh | khoảng 6307 ảnh |
 | Epochs | 100 |
 | Batch size | 16 |
 | Image size | 640 |
@@ -304,27 +306,27 @@ Sau benchmark, em chon **YOLOv8s** va cai thien bang cach mo rong dataset, tap t
 | Inference conf | 0.25 |
 | Inference IoU | 0.45 |
 
-### Ket qua YOLO
+### Kết quả YOLO
 
-Ket qua tu `Quan_sat/yolo_car_report/results.csv`:
+Kết quả từ `Quan_sat/yolo_car_report/results.csv`:
 
-| Moc | Precision | Recall | mAP50 | mAP50-95 |
+| Mốc | Precision | Recall | mAP50 | mAP50-95 |
 | --- | ---: | ---: | ---: | ---: |
-| Epoch co mAP50 cao nhat | ~0.801 | ~0.682 | ~0.726 | ~0.568 |
-| Epoch co mAP50-95 cao nhat | - | - | - | ~0.572 |
+| Epoch có mAP50 cao nhất | ~0.801 | ~0.682 | ~0.726 | ~0.568 |
+| Epoch có mAP50-95 cao nhất | - | - | - | ~0.572 |
 
-So sanh phu voi Faster R-CNN:
+So sánh phụ với Faster R-CNN:
 
 | Model | mAP@0.5 | mAP@0.5:0.95 | mAP@0.75 |
 | --- | ---: | ---: | ---: |
 | YOLOv8s merge_Data | 0.726 | 0.568 | - |
 | Faster R-CNN ResNet50-FPN | 0.306 | 0.128 | 0.084 |
 
-### Cau noi goi y
+### Câu nói gợi ý
 
-> Em khong chi chon model theo mot lan train, ma co benchmark nhieu bien the. YOLOv8s duoc chon vi can bang giua do chinh xac, toc do inference va kich thuoc mo hinh. Viec bo sung du lieu cho `crack`, `scratch`, `dent` la do ba lop nay thuong nho, manh va de bi bo sot hon.
+> Em không chỉ chọn model theo một lần train, mà có benchmark nhiều biến thể. YOLOv8s được chọn vì cân bằng giữa độ chính xác, tốc độ inference và kích thước mô hình. Việc bổ sung dữ liệu cho `crack`, `scratch`, `dent` là do ba lớp này thường nhỏ, mảnh và dễ bị bỏ sót hơn.
 
-### File/hang can chi
+### File/hàm cần chỉ
 
 - `dich_vu/phat_hien_hu_hong.py`
   - `DUONG_DAN_MO_HINH = Models/best.pt`
@@ -341,22 +343,22 @@ So sanh phu voi Faster R-CNN:
 
 ---
 
-## 7. Quy Trinh Lam Viec Voi CNN Severity Classification
+## 7. Quy Trình Làm Việc Với CNN Severity Classification
 
-### Can noi
+### Cần nói
 
-Nhanh CNN co nhiem vu phan loai muc do hu hong cua anh thanh 3 muc:
+Nhánh CNN có nhiệm vụ phân loại mức độ hư hỏng của ảnh thành 3 mức:
 
 - `minor`
 - `moderate`
 - `severe`
 
-Em thu nhieu backbone theo huong transfer learning. Quy trinh train gom:
+Em thử nhiều backbone theo hướng transfer learning. Quy trình train gồm:
 
-1. Phase 1: dong bang backbone, train classifier/head.
-2. Phase 2: fine-tune cac block cuoi cua backbone va classifier de mo hinh thich nghi voi du lieu hu hong xe.
+1. Phase 1: đóng băng backbone, train classifier/head.
+2. Phase 2: fine-tune các block cuối của backbone và classifier để mô hình thích nghi với dữ liệu hư hỏng xe.
 
-### Ket qua cac backbone CNN
+### Kết quả các backbone CNN
 
 | Notebook | Backbone | Best validation metric | Test accuracy | Test macro F1 |
 | --- | --- | ---: | ---: | ---: |
@@ -366,18 +368,18 @@ Em thu nhieu backbone theo huong transfer learning. Quy trinh train gom:
 | `ResNet50.ipynb` | ResNet50 | val_acc = 0.8128 | 0.7026 | 0.7043 |
 | `ConvNeXt_Tiny.ipynb` | ConvNeXt-Tiny | val_macro_f1 = 0.8342 | 0.7077 | 0.7084 |
 
-Em chon **ConvNeXt-Tiny** vi:
+Em chọn **ConvNeXt-Tiny** vì:
 
-- Validation macro F1 cao nhat: 0.8342.
-- Test accuracy cao nhat: 0.7077.
-- Test macro F1 cao nhat: 0.7084.
-- Tong quat hoa tot hon ResNet18 trong bai toan co nhieu chi tiet nho va ranh gioi nhan mo.
+- Validation macro F1 cao nhất: 0.8342.
+- Test accuracy cao nhất: 0.7077.
+- Test macro F1 cao nhất: 0.7084.
+- Tổng quát hóa tốt hơn ResNet18 trong bài toán có nhiều chi tiết nhỏ và ranh giới nhãn mờ.
 
-### Demo dinh tinh
+### Demo định tính
 
-Trong bao cao co mot vi du cung mot anh test:
+Trong báo cáo có một ví dụ cùng một ảnh test:
 
-| Model | Du doan | Xac suat |
+| Model | Dự đoán | Xác suất |
 | --- | ---: | ---: |
 | ResNet18 | SEVERE | 60.61% |
 | EfficientNet-B0 | MINOR | 42.60% |
@@ -385,9 +387,9 @@ Trong bao cao co mot vi du cung mot anh test:
 | ResNet50 | SEVERE | 40.88% |
 | ConvNeXt-Tiny | MODERATE | 44.35% |
 
-Nhan dung cua anh do la `moderate`, nen ConvNeXt-Tiny la mo hinh dung trong vi du nay.
+Nhãn đúng của ảnh đó là `moderate`, nên ConvNeXt-Tiny là mô hình dự đoán đúng trong ví dụ này.
 
-### File/hang can chi
+### File/hàm cần chỉ
 
 - `dich_vu/muc_do_hu_hong.py`
   - `CAC_MUC_DO = ["minor", "moderate", "severe"]`
@@ -397,27 +399,27 @@ Nhan dung cua anh do la `moderate`, nen ConvNeXt-Tiny la mo hinh dung trong vi d
   - `_tai_mo_hinh_muc_do()`
   - `phan_loai_muc_do(danh_sach_anh)`
   - `tong_hop_muc_do(danh_sach_phat_hien, danh_sach_muc_do)`
-- `train/ConvNeXt_Tiny.ipynb`: notebook train model chinh.
+- `train/ConvNeXt_Tiny.ipynb`: notebook train model chính.
 
-### Gioi han can noi ro
+### Giới hạn cần nói rõ
 
-> Accuracy cua CNN khoang 70.77%, nen em khong xem severity la chan ly tuyet doi. Em xem no nhu mot tin hieu ho tro cho tang dieu chinh gia. Lop `moderate` kho nhat vi nam giua `minor` va `severe`.
+> Accuracy của CNN khoảng 70.77%, nên em không xem severity là nhãn tuyệt đối chắc chắn. Em xem nó như một tín hiệu hỗ trợ cho tầng điều chỉnh giá. Lớp `moderate` khó nhất vì nằm giữa `minor` và `severe`.
 
 ---
 
-## 8. Tang Dieu Chinh Gia Theo Hu Hong
+## 8. Tầng Điều Chỉnh Giá Theo Hư Hỏng
 
-### Can noi
+### Cần nói
 
-Sau khi co:
+Sau khi có:
 
-- base price tu XGBoost,
-- class/area/confidence tu YOLO,
-- severity tu ConvNeXt,
+- base price từ XGBoost,
+- class/area/confidence từ YOLO,
+- severity từ ConvNeXt,
 
-em dung mot tang rule-based de tinh ti le tru gia. Ly do dung rule-based la vi hien tai khong co nhan ground truth cho gia xe sau hu hong.
+em dùng một tầng rule-based để tính tỉ lệ trừ giá. Lý do dùng rule-based là vì hiện tại chưa có nhãn ground truth cho giá xe sau hư hỏng.
 
-Cong thuc tong quat trong code:
+Công thức tổng quát trong code:
 
 ```text
 diem_hu_hong = min(MUC_GIAM_TOI_DA, tong_diem * HE_SO_DIEM_SANG_TI_LE)
@@ -425,17 +427,17 @@ tien_tru = gia_co_ban * diem_hu_hong
 gia_sau = gia_co_ban - tien_tru
 ```
 
-Thong so chinh:
+Thông số chính:
 
-| Thong so | Gia tri | Y nghia |
+| Thông số | Giá trị | Ý nghĩa |
 | --- | ---: | --- |
-| `MUC_GIAM_TOI_DA` | 0.3 | Tru toi da 30% gia tri xe |
-| `HE_SO_DIEM_SANG_TI_LE` | 0.012 | Doi damage score sang deduction rate |
-| `LAKH_INR_SANG_VND` | 30,000,000 | Doi gia du doan tu lakh sang VND |
+| `MUC_GIAM_TOI_DA` | 0.3 | Trừ tối đa 30% giá trị xe |
+| `HE_SO_DIEM_SANG_TI_LE` | 0.012 | Đổi damage score sang deduction rate |
+| `LAKH_INR_SANG_VND` | 30,000,000 | Đổi giá dự đoán từ lakh sang VND |
 
-Trong so theo lop hu hong:
+Trọng số theo lớp hư hỏng:
 
-| Lop | Trong so |
+| Lớp | Trọng số |
 | --- | ---: |
 | `scratch` | 0.75 |
 | `dent` | 1.0 |
@@ -444,18 +446,18 @@ Trong so theo lop hu hong:
 | `glass_broken` | 1.25 |
 | `lamp_broken` | 1.35 |
 
-Ngoai ra, diem tru con phu thuoc vao:
+Ngoài ra, điểm trừ còn phụ thuộc vào:
 
 - `severity_score`: minor = 1, moderate = 2, severe = 3.
-- `area_ratio`: bbox chiem bao nhieu dien tich anh.
-- `confidence`: do tin cay cua YOLO.
-- `so_lan_da_gap`: neu cung mot lop lap lai nhieu lan thi co he so giam dan de tranh tru qua manh.
+- `area_ratio`: bbox chiếm bao nhiêu diện tích ảnh.
+- `confidence`: độ tin cậy của YOLO.
+- `so_lan_da_gap`: nếu cùng một lớp lặp lại nhiều lần thì có hệ số giảm dần để tránh trừ quá mạnh.
 
-### Cau noi goi y
+### Câu nói gợi ý
 
-> Tang rule-based nay giup em ket hop duoc dau ra cua cac mo hinh rieng le thanh mot ket qua co y nghia voi bai toan: gia cuoi cung. No cung minh bach hon, vi em co the giai thich tai sao gia bi tru: do co bao nhieu damage, lop nao, muc do nao va dien tich anh huong bao nhieu.
+> Tầng rule-based này giúp em kết hợp được đầu ra của các mô hình riêng lẻ thành một kết quả có ý nghĩa với bài toán: giá cuối cùng. Nó cũng minh bạch hơn, vì em có thể giải thích tại sao giá bị trừ: do có bao nhiêu damage, lớp nào, mức độ nào và diện tích ảnh hưởng bao nhiêu.
 
-### File/hang can chi
+### File/hàm cần chỉ
 
 - `dich_vu/dinh_gia.py`
   - `TRONG_SO_LOP`
@@ -466,49 +468,49 @@ Ngoai ra, diem tru con phu thuoc vao:
 
 ---
 
-## 9. Tich Hop Ung Dung Streamlit
+## 9. Tích Hợp Ứng Dụng Streamlit
 
-### Can noi
+### Cần nói
 
-Sau khi co cac mo hinh rieng le, em tich hop thanh mot app Streamlit de demo.
+Sau khi có các mô hình riêng lẻ, em tích hợp thành một app Streamlit để demo.
 
-Nguoi dung co the:
+Người dùng có thể:
 
-1. Chon hang xe va dong xe.
-2. Nhap thong tin xe: nam san xuat, so km, hop so, nhien lieu, so ghe, dung tich dong co, cong suat...
-3. Upload anh xe neu muon tinh gia co xet damage.
-4. Bam `Analyze Car`.
-5. He thong hien:
-   - anh goc va anh co bounding box,
-   - bang detection,
-   - bang severity,
+1. Chọn hãng xe và dòng xe.
+2. Nhập thông tin xe: năm sản xuất, số km, hộp số, nhiên liệu, số ghế, dung tích động cơ, công suất.
+3. Upload ảnh xe nếu muốn tính giá có xét damage.
+4. Bấm `Analyze Car`.
+5. Hệ thống hiển thị:
+   - ảnh gốc và ảnh có bounding box,
+   - bảng detection,
+   - bảng severity,
    - base price,
    - damage deduction,
    - final adjusted price.
 
-### File giao dien
+### File giao diện
 
-| File | Vai tro |
+| File | Vai trò |
 | --- | --- |
-| `app.py` | Entry point, noi pipeline |
-| `giao_dien/bo_cuc.py` | CSS va layout dau trang |
-| `giao_dien/thanh_phan.py` | Form input, upload anh, hien ket qua |
-| `tien_ich/du_lieu_mau.py` | Gia tri mac dinh, danh sach fuel/transmission |
-| `tien_ich/dinh_dang.py` | Format VND, phan tram |
+| `app.py` | Entry point, nối pipeline |
+| `giao_dien/bo_cuc.py` | CSS và layout đầu trang |
+| `giao_dien/thanh_phan.py` | Form input, upload ảnh, hiển thị kết quả |
+| `tien_ich/du_lieu_mau.py` | Giá trị mặc định, danh sách fuel/transmission |
+| `tien_ich/dinh_dang.py` | Format VND, phần trăm |
 | `tien_ich/trang_thai.py` | Session state Streamlit |
 
-### Demo noi truc tiep
+### Demo nói trực tiếp
 
-Khi demo, nen noi theo thu tu:
+Khi demo, nên nói theo thứ tự:
 
-1. Day la form thong tin xe. Brand/model duoc lay tu dataset de giam sai lech category voi model.
-2. Khi khong upload anh, he thong chi du doan gia co so bang XGBoost.
-3. Khi upload anh, app se chay them YOLO va ConvNeXt.
-4. YOLO ve bbox va tra bang class, confidence, area ratio.
-5. ConvNeXt tra severity cua anh.
-6. Cuoi cung, rule-based adjustment tinh tien tru va gia sau dieu chinh.
+1. Đây là form thông tin xe. Brand/model được lấy từ dataset để giảm sai lệch category với model.
+2. Khi không upload ảnh, hệ thống chỉ dự đoán giá cơ sở bằng XGBoost.
+3. Khi upload ảnh, app sẽ chạy thêm YOLO và ConvNeXt.
+4. YOLO vẽ bbox và trả bảng class, confidence, area ratio.
+5. ConvNeXt trả severity của ảnh.
+6. Cuối cùng, rule-based adjustment tính tiền trừ và giá sau điều chỉnh.
 
-Lenh chay:
+Lệnh chạy:
 
 ```powershell
 streamlit run app.py
@@ -516,30 +518,30 @@ streamlit run app.py
 
 ---
 
-## 10. Nhung Gi Da Dat Duoc
+## 10. Những Gì Đã Đạt Được
 
-### Can noi
+### Cần nói
 
-Qua du an, em da dat duoc cac ket qua sau:
+Qua dự án, em đã đạt được các kết quả sau:
 
-1. **Xay dung pipeline tabular hoan chinh**
+1. **Xây dựng pipeline tabular hoàn chỉnh**
    - EDA, cleaning, feature engineering, preprocessing, train/evaluate, save model.
-   - XGBoost dat R2 validation **0.9382**.
+   - XGBoost đạt R2 validation **0.9382**.
 
-2. **Xay dung nhanh damage detection**
+2. **Xây dựng nhánh damage detection**
    - Benchmark YOLOv8n, YOLOv8s, YOLOv8m.
-   - Mo rong dataset co muc tieu cho `crack`, `scratch`, `dent`.
-   - YOLOv8s tren `merge_Data` dat mAP50 khoang **0.726**.
+   - Mở rộng dataset có mục tiêu cho `crack`, `scratch`, `dent`.
+   - YOLOv8s trên `merge_Data` đạt mAP50 khoảng **0.726**.
 
-3. **Xay dung nhanh severity classification**
-   - Thu nhieu backbone CNN: ResNet18, EfficientNet-B0, EfficientNet-B2, ResNet50, ConvNeXt-Tiny.
-   - Chon ConvNeXt-Tiny voi test accuracy **0.7077**, test macro F1 **0.7084**.
+3. **Xây dựng nhánh severity classification**
+   - Thử nhiều backbone CNN: ResNet18, EfficientNet-B0, EfficientNet-B2, ResNet50, ConvNeXt-Tiny.
+   - Chọn ConvNeXt-Tiny với test accuracy **0.7077**, test macro F1 **0.7084**.
 
-4. **Tich hop thanh ung dung demo**
-   - Streamlit app nhan thong tin xe va anh.
-   - Hien detection, severity, base price va final price.
+4. **Tích hợp thành ứng dụng demo**
+   - Streamlit app nhận thông tin xe và ảnh.
+   - Hiển thị detection, severity, base price và final price.
 
-5. **Co bao cao va artifact**
+5. **Có báo cáo và artifact**
    - `report/dataset_report.md`
    - `report/training_report.md`
    - `Quan_sat/model_comparison_report.txt`
@@ -548,195 +550,195 @@ Qua du an, em da dat duoc cac ket qua sau:
 
 ---
 
-## 11. Kho Khan Trong Qua Trinh Lam
+## 11. Khó Khăn Trong Quá Trình Làm
 
-### Bang kho khan va cach xu ly
+### Bảng khó khăn và cách xử lý
 
-| Kho khan | Mo ta | Cach em xu ly |
+| Khó khăn | Mô tả | Cách em xử lý |
 | --- | --- | --- |
-| Du lieu bang co nhieu don vi text | `Mileage`, `Engine`, `Power` khong phai so thuan | Viet ham tach so trong `chuyen_cot_sang_so` |
-| Missing value | `New_Price` thieu rat nhieu, mot so cot nhu `Power`, `Engine`, `Seats` thieu | Loai cot qua thieu, impute median/mode |
-| Category qua nhieu | Ten xe co nhieu gia tri unique | Tao `Top_xe`, `Hang_xe`, gop gia tri hiem ve `Other` |
-| Outlier | So km, gia, cong suat co gia tri cuc doan | Clip theo IQR trong `xu_ly_outlier` |
-| Tranh data leakage | De bi fit imputer/top category tren ca test | Fit tren train, reuse cho val/test |
-| Damage nho, kho detect | `scratch`, `dent`, `crack` nho va de bi anh huong boi anh sang | Bo sung 2307 anh co chu dich cho cac lop nay |
-| Annotation noise | Test set co the thieu nhan, lam mo hinh phat hien dung bi tinh thanh false positive | Khong chi nhin mAP, co xem inference dinh tinh |
-| Severity kho | `moderate` nam giua minor/severe, de nham | Benchmark nhieu backbone, chon ConvNeXt-Tiny |
-| Khong co nhan final price sau damage | Khong the train supervised final adjusted price | Dung rule-based adjustment minh bach |
-| Tich hop model | Can dong bo schema input app voi schema train model | Viet `chuan_hoa_thong_tin_xe` trong `app.py` |
+| Dữ liệu bảng có nhiều đơn vị text | `Mileage`, `Engine`, `Power` không phải số thuần | Viết hàm tách số trong `chuyen_cot_sang_so` |
+| Missing value | `New_Price` thiếu rất nhiều, một số cột như `Power`, `Engine`, `Seats` thiếu | Loại cột quá thiếu, impute median/mode |
+| Category quá nhiều | Tên xe có nhiều giá trị unique | Tạo `Top_xe`, `Hang_xe`, gộp giá trị hiếm về `Other` |
+| Outlier | Số km, giá, công suất có giá trị cực đoan | Clip theo IQR trong `xu_ly_outlier` |
+| Tránh data leakage | Dễ bị fit imputer/top category trên cả test | Fit trên train, reuse cho val/test |
+| Damage nhỏ, khó detect | `scratch`, `dent`, `crack` nhỏ và dễ bị ảnh hưởng bởi ánh sáng | Bổ sung 2307 ảnh có chủ đích cho các lớp này |
+| Annotation noise | Test set có thể thiếu nhãn, làm mô hình phát hiện đúng bị tính thành false positive | Không chỉ nhìn mAP, có xem inference định tính |
+| Severity khó | `moderate` nằm giữa minor/severe, dễ nhầm | Benchmark nhiều backbone, chọn ConvNeXt-Tiny |
+| Không có nhãn final price sau damage | Không thể train supervised final adjusted price | Dùng rule-based adjustment minh bạch |
+| Tích hợp model | Cần đồng bộ schema input app với schema train model | Viết `chuan_hoa_thong_tin_xe` trong `app.py` |
 
-### Cau noi goi y
+### Câu nói gợi ý
 
-> Kho khan lon nhat cua em khong chi la train model, ma la lam sao ket hop ba bai toan khac nhau thanh mot he thong co the demo duoc. Vi du, du lieu gia xe va du lieu damage khong dong bo theo tung chiec xe, nen em phai thiet ke theo huong modular pipeline thay vi end-to-end.
-
----
-
-## 12. Han Che Hien Tai
-
-### Can noi
-
-Du an hien tai van co mot so han che:
-
-1. **Chua co dataset multimodal dong bo**
-   - Anh damage va du lieu gia xe den tu cac nguon khac nhau.
-   - Chua co moi quan he truc tiep theo tung chiec xe giua damage va gia ban.
-
-2. **Chua co ground truth cho final adjusted price**
-   - Gia cuoi cung sau khi xet damage hien duoc tinh bang rule-based.
-   - Chua phai mo hinh supervised hoc tu nhan that.
-
-3. **CNN severity con gioi han**
-   - Test accuracy khoang 70.77%.
-   - Lop `moderate` con nhap nhang.
-
-4. **Severity hien chay tren anh full**
-   - Neu anh co nhieu vung hư hong, mot severity cho ca anh co the chua chi tiet.
-   - Huong cai tien la crop tung bbox tu YOLO roi phan loai severity rieng cho tung damage.
-
-5. **App moi o muc MVP**
-   - Van can dong goi path/model tot hon neu chuyen sang may khac.
-   - Can them unit test/automation test that su.
+> Khó khăn lớn nhất của em không chỉ là train model, mà là làm sao kết hợp ba bài toán khác nhau thành một hệ thống có thể demo được. Dữ liệu giá xe và dữ liệu damage không đồng bộ theo từng chiếc xe, nên em phải thiết kế theo hướng modular pipeline thay vì end-to-end.
 
 ---
 
-## 13. Huong Phat Trien
+## 12. Hạn Chế Hiện Tại
 
-### Can noi
+### Cần nói
 
-Neu tiep tuc phat trien, em se lam cac huong:
+Dự án hiện tại vẫn có một số hạn chế:
 
-1. **Cai thien du lieu**
-   - Thu thap du lieu xe co anh hu hong va gia thuc te sau khi dinh gia.
-   - Bo sung hard negatives va kiem tra duplicate/label noise.
+1. **Chưa có dataset multimodal đồng bộ**
+   - Ảnh damage và dữ liệu giá xe đến từ các nguồn khác nhau.
+   - Chưa có mối quan hệ trực tiếp theo từng chiếc xe giữa damage và giá bán.
 
-2. **Cai thien severity**
-   - Cat crop bbox tu YOLO roi cho CNN phan loai tung vung damage.
-   - Hoac dung multi-task model vua detect vua danh severity.
+2. **Chưa có ground truth cho final adjusted price**
+   - Giá cuối cùng sau khi xét damage hiện được tính bằng rule-based.
+   - Chưa phải mô hình supervised học từ nhãn thật.
 
-3. **Cai thien price adjustment**
-   - Neu co nhan gia sau hu hong, co the train model hoc truc tiep ti le tru gia.
-   - Hien tai rule-based minh bach, nhung can du lieu that de hieu chinh trong so.
+3. **CNN severity còn giới hạn**
+   - Test accuracy khoảng 70.77%.
+   - Lớp `moderate` còn nhập nhằng.
 
-4. **Cai thien deploy**
-   - Bo hard-code path.
-   - Dong goi config.
-   - Them test tu dong cho preprocessing va prediction.
-   - Cache model va toi uu inference.
+4. **Severity hiện chạy trên ảnh full**
+   - Nếu ảnh có nhiều vùng hư hỏng, một severity cho cả ảnh có thể chưa chi tiết.
+   - Hướng cải tiến là crop từng bbox từ YOLO rồi phân loại severity riêng cho từng damage.
 
----
-
-## 14. Neu Thay Hoi
-
-### Vi sao chon XGBoost thay vi Random Forest?
-
-Em co so sanh tren validation. Random Forest dat R2 0.9202, con XGBoost dat R2 0.9382, RMSE va MAE cung thap hon. Ngoai ra XGBoost phu hop voi du lieu bang da xu ly va de trien khai trong pipeline.
-
-### Vi sao dung OrdinalEncoder cho categorical?
-
-Vi model tree-based nhu XGBoost/Random Forest co the lam viec voi so nguyen encode tu category. Em dung `handle_unknown="use_encoded_value", unknown_value=-1` de khi app gap category moi khong bi loi.
-
-### Em co tranh data leakage khong?
-
-Co. Trong `src/main.py`, em chia train/validation truoc. Cac thong so nhu median km, imputer, top category, outlier bounds duoc fit tren train roi moi reuse cho validation/test.
-
-### Vi sao khong dung mot mo hinh end-to-end cho ca anh va bang?
-
-Vi hien tai du lieu anh damage va du lieu gia xe khong dong bo theo tung chiec xe, va khong co nhan gia sau hu hong. Neu train end-to-end se khong co target dung. Vi vay em chon thiet ke modular: XGBoost du doan gia co so, YOLO/CNN trich xuat damage, rule-based tinh dieu chinh.
-
-### Vi sao chon YOLOv8s?
-
-YOLOv8n nhanh nhung kha nang hoc damage nho han che. YOLOv8m lon hon nhung chi phi cao, khong phu hop bang cho demo. YOLOv8s can bang giua do chinh xac va toc do, dat mAP50 khoang 0.726 tren run `merge_Data`.
-
-### Vi sao bo sung du lieu cho `crack`, `scratch`, `dent`?
-
-Vi day la cac lop kho: vung hu hong nho, manh, de bi anh huong boi anh sang va goc chup. Bo sung co muc tieu giup mo hinh co them mau hoc cho cac truong hop kho thay vi tang du lieu dai tra.
-
-### Vi sao chon ConvNeXt-Tiny?
-
-Em benchmark 5 backbone. ConvNeXt-Tiny co validation macro F1 0.8342, test accuracy 0.7077 va test macro F1 0.7084, tot nhat trong cac model da thu.
-
-### Tai sao CNN phan loai anh full ma khong phan loai tung bbox?
-
-Trong ban hien tai, de phu hop voi du lieu severity va app demo, em dung anh full. Tuy nhien em nhan thuc day la han che. Huong phat trien tot hon la crop tung bbox tu YOLO roi cho CNN phan loai severity tung damage.
-
-### Rule-based adjustment co chu quan khong?
-
-Co mot phan chu quan, vi chua co ground truth gia sau hu hong. Tuy nhien cach nay minh bach va giai thich duoc: moi lop damage co trong so, severity co diem, bbox co dien tich, confidence co he so. Khi co du lieu that, cac he so nay co the duoc hoc hoac hieu chinh lai.
+5. **App mới ở mức MVP**
+   - Vẫn cần đóng gói path/model tốt hơn nếu chuyển sang máy khác.
+   - Cần thêm unit test/automation test thật sự.
 
 ---
 
-## 15. Kich Ban Noi 7-10 Phut
+## 13. Hướng Phát Triển
 
-### 1 phut - Gioi thieu bai toan
+### Cần nói
 
-Kinh thua thay, du an cua em la he thong demo du doan gia xe cu co xet den tinh trang hu hong ngoai that. Dau vao gom thong tin bang cua xe va anh xe. Dau ra la gia co so, cac hu hong phat hien tren anh, muc do hu hong va gia sau dieu chinh.
+Nếu tiếp tục phát triển, em sẽ làm các hướng:
 
-### 1 phut - Kien truc
+1. **Cải thiện dữ liệu**
+   - Thu thập dữ liệu xe có ảnh hư hỏng và giá thực tế sau khi định giá.
+   - Bổ sung hard negatives và kiểm tra duplicate/label noise.
 
-He thong gom ba nhanh: XGBoost cho gia co so, YOLOv8s cho phat hien hu hong, ConvNeXt-Tiny cho phan loai muc do. Cuoi cung em dung rule-based adjustment de tinh gia cuoi cung. Em chon huong modular vi du lieu gia va du lieu anh khong dong bo theo tung xe va chua co nhan gia sau hu hong.
+2. **Cải thiện severity**
+   - Cắt crop bbox từ YOLO rồi cho CNN phân loại từng vùng damage.
+   - Hoặc dùng multi-task model vừa detect vừa đánh severity.
 
-### 2 phut - Tabular pipeline
+3. **Cải thiện price adjustment**
+   - Nếu có nhãn giá sau hư hỏng, có thể train model học trực tiếp tỉ lệ trừ giá.
+   - Hiện tại rule-based minh bạch, nhưng cần dữ liệu thật để hiệu chỉnh trọng số.
 
-Voi du lieu bang, em lam EDA, rename cot, tach so tu cac cot co don vi, xu ly missing, tao feature moi nhu tuoi xe, hang xe, km moi nam, log km va Top_xe. Sau do em chia train/validation, preprocess numeric/categorical va train model. Ket qua XGBoost dat R2 validation 0.9382, tot hon Random Forest 0.9202, nen em chon XGBoost lam model deploy.
-
-### 2 phut - Image pipeline
-
-Voi damage detection, em benchmark YOLOv8n, YOLOv8s, YOLOv8m. YOLOv8s can bang tot nhat nen duoc chon. Sau do em mo rong dataset tu khoang 4000 anh len khoang 6307 anh bang cach bo sung 2307 anh cho cac lop kho `crack`, `scratch`, `dent`. Ket qua YOLOv8s tren `merge_Data` dat mAP50 khoang 0.726.
-
-Voi severity classification, em thu ResNet18, EfficientNet-B0, EfficientNet-B2, ResNet50 va ConvNeXt-Tiny. ConvNeXt-Tiny tot nhat voi test accuracy 0.7077 va macro F1 0.7084, nen em dung lam model chinh.
-
-### 1 phut - Tich hop app
-
-Em tich hop cac thanh phan vao Streamlit. Nguoi dung nhap thong tin xe va upload anh. App chuan hoa input, du doan base price bang XGBoost, chay YOLO de ve bbox, chay ConvNeXt de lay severity, roi tinh damage deduction va final adjusted price.
-
-### 1 phut - Kho khan
-
-Kho khan lon nhat la du lieu khong dong bo va khong co nhan gia sau damage. Vi vay em khong the train mot model end-to-end, ma phai thiet ke hybrid pipeline. Ngoai ra du lieu bang co missing/outlier/don vi text, con du lieu anh co class imbalance, damage nho va label noise.
-
-### 1 phut - Ket luan
-
-Ket qua cuoi cung la em xay dung duoc mot MVP hoan chinh: co pipeline train tabular, co mo hinh detection, co mo hinh severity, co rule adjustment va co app demo. Huong phat trien tiep theo la thu thap du lieu multimodal dong bo hon, phan loai severity theo crop bbox va hoc truc tiep ti le tru gia khi co nhan thuc te.
+4. **Cải thiện deploy**
+   - Bỏ hard-code path.
+   - Đóng gói config.
+   - Thêm test tự động cho preprocessing và prediction.
+   - Cache model và tối ưu inference.
 
 ---
 
-## 16. Cac File Nen Mo Khi Bao Cao
+## 14. Nếu Thầy Hỏi
 
-Neu can demo code, nen mo theo thu tu:
+### Vì sao chọn XGBoost thay vì Random Forest?
+
+Em có so sánh trên validation. Random Forest đạt R2 0.9202, còn XGBoost đạt R2 0.9382, RMSE và MAE cũng thấp hơn. Ngoài ra XGBoost phù hợp với dữ liệu bảng đã xử lý và dễ triển khai trong pipeline.
+
+### Vì sao dùng OrdinalEncoder cho categorical?
+
+Vì model tree-based như XGBoost/Random Forest có thể làm việc với số nguyên encode từ category. Em dùng `handle_unknown="use_encoded_value", unknown_value=-1` để khi app gặp category mới không bị lỗi.
+
+### Em có tránh data leakage không?
+
+Có. Trong `src/main.py`, em chia train/validation trước. Các thông số như median km, imputer, top category, outlier bounds được fit trên train rồi mới reuse cho validation/test.
+
+### Vì sao không dùng một mô hình end-to-end cho cả ảnh và bảng?
+
+Vì hiện tại dữ liệu ảnh damage và dữ liệu giá xe không đồng bộ theo từng chiếc xe, và không có nhãn giá sau hư hỏng. Nếu train end-to-end sẽ không có target đúng. Vì vậy em chọn thiết kế modular: XGBoost dự đoán giá cơ sở, YOLO/CNN trích xuất damage, rule-based tính điều chỉnh.
+
+### Vì sao chọn YOLOv8s?
+
+YOLOv8n nhanh nhưng khả năng học damage nhỏ hạn chế. YOLOv8m lớn hơn nhưng chi phí cao, không phù hợp bằng cho demo. YOLOv8s cân bằng giữa độ chính xác và tốc độ, đạt mAP50 khoảng 0.726 trên run `merge_Data`.
+
+### Vì sao bổ sung dữ liệu cho `crack`, `scratch`, `dent`?
+
+Vì đây là các lớp khó: vùng hư hỏng nhỏ, mảnh, dễ bị ảnh hưởng bởi ánh sáng và góc chụp. Bổ sung có mục tiêu giúp mô hình có thêm mẫu học cho các trường hợp khó thay vì tăng dữ liệu đại trà.
+
+### Vì sao chọn ConvNeXt-Tiny?
+
+Em benchmark 5 backbone. ConvNeXt-Tiny có validation macro F1 0.8342, test accuracy 0.7077 và test macro F1 0.7084, tốt nhất trong các model đã thử.
+
+### Tại sao CNN phân loại ảnh full mà không phân loại từng bbox?
+
+Trong bản hiện tại, để phù hợp với dữ liệu severity và app demo, em dùng ảnh full. Tuy nhiên em nhận thức đây là hạn chế. Hướng phát triển tốt hơn là crop từng bbox từ YOLO rồi cho CNN phân loại severity từng damage.
+
+### Rule-based adjustment có chủ quan không?
+
+Có một phần chủ quan, vì chưa có ground truth giá sau hư hỏng. Tuy nhiên cách này minh bạch và giải thích được: mỗi lớp damage có trọng số, severity có điểm, bbox có diện tích, confidence có hệ số. Khi có dữ liệu thật, các hệ số này có thể được học hoặc hiệu chỉnh lại.
+
+---
+
+## 15. Kịch Bản Nói 7-10 Phút
+
+### 1 phút - Giới thiệu bài toán
+
+Kính thưa thầy, dự án của em là hệ thống demo dự đoán giá xe cũ có xét đến tình trạng hư hỏng ngoại thất. Đầu vào gồm thông tin bảng của xe và ảnh xe. Đầu ra là giá cơ sở, các hư hỏng phát hiện trên ảnh, mức độ hư hỏng và giá sau điều chỉnh.
+
+### 1 phút - Kiến trúc
+
+Hệ thống gồm ba nhánh: XGBoost cho giá cơ sở, YOLOv8s cho phát hiện hư hỏng, ConvNeXt-Tiny cho phân loại mức độ. Cuối cùng em dùng rule-based adjustment để tính giá cuối cùng. Em chọn hướng modular vì dữ liệu giá và dữ liệu ảnh không đồng bộ theo từng xe và chưa có nhãn giá sau hư hỏng.
+
+### 2 phút - Tabular pipeline
+
+Với dữ liệu bảng, em làm EDA, rename cột, tách số từ các cột có đơn vị, xử lý missing, tạo feature mới như tuổi xe, hãng xe, km mỗi năm, log km và Top_xe. Sau đó em chia train/validation, preprocess numeric/categorical và train model. Kết quả XGBoost đạt R2 validation 0.9382, tốt hơn Random Forest 0.9202, nên em chọn XGBoost làm model deploy.
+
+### 2 phút - Image pipeline
+
+Với damage detection, em benchmark YOLOv8n, YOLOv8s, YOLOv8m. YOLOv8s cân bằng tốt nhất nên được chọn. Sau đó em mở rộng dataset từ khoảng 4000 ảnh lên khoảng 6307 ảnh bằng cách bổ sung 2307 ảnh cho các lớp khó `crack`, `scratch`, `dent`. Kết quả YOLOv8s trên `merge_Data` đạt mAP50 khoảng 0.726.
+
+Với severity classification, em thử ResNet18, EfficientNet-B0, EfficientNet-B2, ResNet50 và ConvNeXt-Tiny. ConvNeXt-Tiny tốt nhất với test accuracy 0.7077 và macro F1 0.7084, nên em dùng làm model chính.
+
+### 1 phút - Tích hợp app
+
+Em tích hợp các thành phần vào Streamlit. Người dùng nhập thông tin xe và upload ảnh. App chuẩn hóa input, dự đoán base price bằng XGBoost, chạy YOLO để vẽ bbox, chạy ConvNeXt để lấy severity, rồi tính damage deduction và final adjusted price.
+
+### 1 phút - Khó khăn
+
+Khó khăn lớn nhất là dữ liệu không đồng bộ và không có nhãn giá sau damage. Vì vậy em không thể train một model end-to-end, mà phải thiết kế hybrid pipeline. Ngoài ra dữ liệu bảng có missing/outlier/đơn vị text, còn dữ liệu ảnh có class imbalance, damage nhỏ và label noise.
+
+### 1 phút - Kết luận
+
+Kết quả cuối cùng là em xây dựng được một MVP hoàn chỉnh: có pipeline train tabular, có mô hình detection, có mô hình severity, có rule adjustment và có app demo. Hướng phát triển tiếp theo là thu thập dữ liệu multimodal đồng bộ hơn, phân loại severity theo crop bbox và học trực tiếp tỉ lệ trừ giá khi có nhãn thực tế.
+
+---
+
+## 16. Các File Nên Mở Khi Báo Cáo
+
+Nếu cần demo code, nên mở theo thứ tự:
 
 1. `app.py`
-   - Chi ham `chay_pipeline`.
-   - Noi: day la noi ket noi 3 nhanh mo hinh.
+   - Chỉ hàm `chay_pipeline`.
+   - Nói: đây là nơi kết nối 3 nhánh mô hình.
 
 2. `src/main.py`
-   - Chi split train/validation va flow train tabular.
-   - Noi: day la pipeline train XGBoost.
+   - Chỉ split train/validation và flow train tabular.
+   - Nói: đây là pipeline train XGBoost.
 
 3. `src/feature_engineering.py`
-   - Chi cac feature `Tuoi_xe`, `Hang_xe`, `Km_moi_nam`, `Chay_nhieu`.
+   - Chỉ các feature `Tuoi_xe`, `Hang_xe`, `Km_moi_nam`, `Chay_nhieu`.
 
 4. `dich_vu/phat_hien_hu_hong.py`
-   - Chi `phat_hien_hu_hong` va thong so YOLO.
+   - Chỉ `phat_hien_hu_hong` và thông số YOLO.
 
 5. `dich_vu/muc_do_hu_hong.py`
-   - Chi ConvNeXt-Tiny va 3 class severity.
+   - Chỉ ConvNeXt-Tiny và 3 class severity.
 
 6. `dich_vu/dinh_gia.py`
-   - Chi `TRONG_SO_LOP`, `MUC_GIAM_TOI_DA`, `tinh_dieu_chinh_gia`.
+   - Chỉ `TRONG_SO_LOP`, `MUC_GIAM_TOI_DA`, `tinh_dieu_chinh_gia`.
 
 7. `Quan_sat/model_comparison_report.txt`
-   - Chi bang XGBoost vs Random Forest.
+   - Chỉ bảng XGBoost vs Random Forest.
 
-8. `Quan_sat/yolo_car_report/results.png` hoac `results.csv`
-   - Chi ket qua train YOLO.
+8. `Quan_sat/yolo_car_report/results.png` hoặc `results.csv`
+   - Chỉ kết quả train YOLO.
 
 9. `report/training_report.md`
-   - Chi bang CNN va ket qua chon ConvNeXt-Tiny.
+   - Chỉ bảng CNN và kết quả chọn ConvNeXt-Tiny.
 
 ---
 
-## 17. Cau Ket
+## 17. Câu Kết
 
-Em co the ket thuc bang cau nay:
+Em có thể kết thúc bằng câu này:
 
-> Tong ket lai, du an cua em da xay dung duoc mot pipeline hybrid cho bai toan dinh gia xe cu co xet den hu hong ngoai that. Phan gia xe duoc hoc bang XGBoost, phan hinh anh duoc xu ly bang YOLOv8s va ConvNeXt-Tiny, sau do ket hop bang mot tang dieu chinh gia minh bach. Du an van con han che ve du lieu multimodal va nhan gia sau hu hong, nhung da dat duoc muc tieu xay dung mot he thong demo hoan chinh, co ket qua dinh luong va co kha nang mo rong tiep.
+> Tổng kết lại, dự án của em đã xây dựng được một pipeline hybrid cho bài toán định giá xe cũ có xét đến hư hỏng ngoại thất. Phần giá xe được học bằng XGBoost, phần hình ảnh được xử lý bằng YOLOv8s và ConvNeXt-Tiny, sau đó kết hợp bằng một tầng điều chỉnh giá minh bạch. Dự án vẫn còn hạn chế về dữ liệu multimodal và nhãn giá sau hư hỏng, nhưng đã đạt được mục tiêu xây dựng một hệ thống demo hoàn chỉnh, có kết quả định lượng và có khả năng mở rộng tiếp.
 
