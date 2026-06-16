@@ -274,15 +274,21 @@ def hien_ket_qua_muc_do(tong_hop_muc_do, bang_muc_do):
 
     cot1, cot2, cot3, cot4 = st.columns(4)
     cot1.metric("Total Damages", tong_hop_muc_do.get("total_damages", 0))
-    cot2.metric("Max Severity", tong_hop_muc_do.get("max_severity", "none").title())
-    cot3.metric(
+    cot2.metric("Images Classified", tong_hop_muc_do.get("total_images_classified", 0))
+    cot3.metric("Max Severity", tong_hop_muc_do.get("max_severity", "none").title())
+    cot4.metric(
         "Average Severity Score",
         f"{tong_hop_muc_do.get('average_severity_score', 0.0):.2f}",
     )
-    cot4.metric("Dents", tong_hop_muc_do.get("num_dents", 0))
+
+    cot1, cot2, cot3 = st.columns(3)
+    cot1.metric("Dents", tong_hop_muc_do.get("num_dents", 0))
+    cot2.metric("Scratches", tong_hop_muc_do.get("num_scratches", 0))
+    cot3.metric("Cracks", tong_hop_muc_do.get("num_cracks", 0))
 
     bang_tom_tat = [
         {"Metric": "Total damages", "Value": tong_hop_muc_do.get("total_damages", 0)},
+        {"Metric": "Images classified by CNN", "Value": tong_hop_muc_do.get("total_images_classified", 0)},
         {"Metric": "Num dents", "Value": tong_hop_muc_do.get("num_dents", 0)},
         {"Metric": "Num scratches", "Value": tong_hop_muc_do.get("num_scratches", 0)},
         {"Metric": "Num cracks", "Value": tong_hop_muc_do.get("num_cracks", 0)},
@@ -294,7 +300,7 @@ def hien_ket_qua_muc_do(tong_hop_muc_do, bang_muc_do):
     ]
     st.dataframe(pd.DataFrame(bang_tom_tat), use_container_width=True, hide_index=True)
 
-    st.subheader("Severity Details")
+    st.subheader("Severity Details by Full Image")
     if not bang_muc_do:
         st.info("No severity results to display.")
         return

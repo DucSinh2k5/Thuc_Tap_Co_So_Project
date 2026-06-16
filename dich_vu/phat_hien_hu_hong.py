@@ -20,7 +20,7 @@ LOP_HU_HONG = [
     "crack",
     "lamp_broken",
     "glass_broken",
-    "rust",
+    "tire_flat",
 ]
 
 MAU_LOP = {
@@ -29,7 +29,7 @@ MAU_LOP = {
     "crack": (255, 60, 60),
     "lamp_broken": (180, 0, 255),
     "glass_broken": (0, 200, 120),
-    "rust": (150, 90, 40),
+    "tire_flat": (150, 90, 40),
 }
 
 

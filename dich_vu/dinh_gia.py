@@ -4,15 +4,42 @@ import pandas as pd
 LAKH_INR_SANG_VND = 30_000_000
 
 TRONG_SO_LOP = {
+    "scratch": 0.75,
     "dent": 1.0,
-    "scratch": 0.85,
-    "crack": 1.1,
-    "lamp_broken": 1.2,
-    "glass_broken": 1.15,
-    "rust": 0.9,
+    "crack": 1.15,
+    "tire_flat": 1.1,
+    "glass_broken": 1.25,
+    "lamp_broken": 1.35,
 }
 
+HE_SO_DIEM_SANG_TI_LE = 0.012
+MUC_GIAM_TOI_DA = 0.3
+
 mo_hinh = joblib.load(r"F:\Documents\CODE\TTCS\Thuc_Tap_Co_So_Project\Models\model.pkl")
+
+
+def _tinh_he_so_dien_tich(ti_le_dien_tich):
+    ti_le = max(0.0, float(ti_le_dien_tich or 0.0))
+    if ti_le < 0.02:
+        return 0.9
+    if ti_le < 0.08:
+        return 1.0
+    if ti_le < 0.16:
+        return 1.1
+    return 1.2
+
+
+def _tinh_he_so_so_luong(so_lan_da_gap):
+    if so_lan_da_gap <= 0:
+        return 1.0
+    if so_lan_da_gap == 1:
+        return 0.75
+    return 0.5
+
+
+def _tinh_he_so_tin_cay(confidence):
+    do_tin_cay = max(0.0, min(float(confidence or 0.0), 1.0))
+    return 0.75 + do_tin_cay * 0.25
 
 def _tao_du_lieu_du_doan(thong_tin_xe, mo_hinh):
     if isinstance(thong_tin_xe, pd.DataFrame):
@@ -62,7 +89,12 @@ def tinh_dieu_chinh_gia(gia_co_ban, danh_sach_phat_hien,danh_sach_muc_do,):
             "top_deduction_reason": "No detected damages",
         }
 
-    ban_do_muc_do = {s["damage_id"]: s for s in danh_sach_muc_do}
+    ban_do_muc_do_theo_anh = {s["image_name"]: s for s in danh_sach_muc_do if s.get("image_name")}
+    muc_do_mac_dinh = max(
+        danh_sach_muc_do,
+        key=lambda muc_do: muc_do.get("severity_score", 1),
+        default={"severity_score": 1, "severity": "minor"},
+    )
     diem_theo_lop = {}
     dem_theo_lop = {}
     tong_diem = 0.0
@@ -70,22 +102,24 @@ def tinh_dieu_chinh_gia(gia_co_ban, danh_sach_phat_hien,danh_sach_muc_do,):
     muc_do_cao_nhat = "minor"
 
     for phat_hien in danh_sach_phat_hien:
-        muc_do = ban_do_muc_do.get(phat_hien["damage_id"], {"severity_score": 1, "severity": "minor"})
+        muc_do = ban_do_muc_do_theo_anh.get(phat_hien.get("image_name"), muc_do_mac_dinh)
+        lop_hu_hong = phat_hien.get("class", "unknown")
         diem_muc_do = muc_do["severity_score"]
-        trong_so = TRONG_SO_LOP.get(phat_hien["class"], 1.0)
-        ti_le = phat_hien.get("area_ratio", 0.0)
-        he_so_dien_tich = 0.2 + min(ti_le, 0.25) * 2.5
-        diem = diem_muc_do * trong_so * he_so_dien_tich
+        trong_so = TRONG_SO_LOP.get(lop_hu_hong, 1.0)
+        he_so_dien_tich = _tinh_he_so_dien_tich(phat_hien.get("area_ratio", 0.0))
+        he_so_so_luong = _tinh_he_so_so_luong(dem_theo_lop.get(lop_hu_hong, 0))
+        he_so_tin_cay = _tinh_he_so_tin_cay(phat_hien.get("confidence", 1.0))
+        diem = diem_muc_do * trong_so * he_so_dien_tich * he_so_so_luong * he_so_tin_cay
 
         tong_diem += diem
-        diem_theo_lop[phat_hien["class"]] = diem_theo_lop.get(phat_hien["class"], 0.0) + diem
-        dem_theo_lop[phat_hien["class"]] = dem_theo_lop.get(phat_hien["class"], 0) + 1
+        diem_theo_lop[lop_hu_hong] = diem_theo_lop.get(lop_hu_hong, 0.0) + diem
+        dem_theo_lop[lop_hu_hong] = dem_theo_lop.get(lop_hu_hong, 0) + 1
 
         if diem_muc_do > diem_cao_nhat:
             diem_cao_nhat = diem_muc_do
             muc_do_cao_nhat = muc_do["severity"]
 
-    diem_hu_hong = min(0.3, tong_diem * 0.03)
+    diem_hu_hong = min(MUC_GIAM_TOI_DA, tong_diem * HE_SO_DIEM_SANG_TI_LE)
     tien_tru = round((gia_co_ban * diem_hu_hong) / 100_000) * 100_000
     tien_tru = min(tien_tru, gia_co_ban)
     gia_sau = max(gia_co_ban - tien_tru, 0.0)

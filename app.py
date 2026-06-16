@@ -40,7 +40,7 @@ def chay_pipeline(thong_tin_xe, danh_sach_anh):
 
         danh_sach_phat_hien = phat_hien_hu_hong(danh_sach_anh)
         anh_voi_bbox = ve_bbox_anh(danh_sach_anh, danh_sach_phat_hien)
-        danh_sach_muc_do = phan_loai_muc_do(danh_sach_phat_hien, danh_sach_anh)
+        danh_sach_muc_do = phan_loai_muc_do(danh_sach_anh)
         tong_hop_muc_do_kq = tong_hop_muc_do(danh_sach_phat_hien, danh_sach_muc_do)
     else:
         danh_sach_phat_hien = []
@@ -194,7 +194,7 @@ def chay_ung_dung():
             )
 
             hien_tieu_de_muc("Severity Results")
-            bang_muc_do = ghep_chi_tiet_muc_do(ket_qua["detections"], ket_qua["severities"])
+            bang_muc_do = ghep_chi_tiet_muc_do(ket_qua["severities"])
             hien_ket_qua_muc_do(ket_qua["severity_summary"], bang_muc_do)
         else:
             st.info("No images uploaded. Final price is based on the XGBoost tabular prediction only.")
