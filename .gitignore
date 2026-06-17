@@ -1,4 +1,7 @@
 models/
+.env
+.env.*
+streamlit_chatbot*.log
 tests/tests_CNN/ConvNeXt.pkl
 tests/test_CNN/ConvNeXt.pkl
 tests/test_CNN/Efficient_B0.pkl

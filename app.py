@@ -5,6 +5,7 @@ import streamlit as st
 
 from dich_vu.dinh_gia import du_doan_gia_co_ban, tinh_dieu_chinh_gia
 from giao_dien.bo_cuc import chen_css_co_ban, hien_tieu_de_dau_trang, hien_tieu_de_muc
+from giao_dien.chatbot import hien_chatbot_noi
 from giao_dien.thanh_phan import (
     doc_anh_da_tai,
     hien_form_thong_tin_xe,
@@ -24,6 +25,9 @@ def tong_hop_muc_do_rong():
         "num_dents": 0,
         "num_scratches": 0,
         "num_cracks": 0,
+        "num_lamp_broken": 0,
+        "num_tire_flat": 0,
+        "num_glass_broken": 0,
         "max_severity": "none",
         "average_severity_score": 0.0,
     }
@@ -204,6 +208,8 @@ def chay_ung_dung():
 
     else:
         st.info("Provide inputs to see results.")
+
+    hien_chatbot_noi(st.session_state.get("ket_qua_cuoi"))
 
 
 if __name__ == "__main__":

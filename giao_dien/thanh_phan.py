@@ -286,12 +286,20 @@ def hien_ket_qua_muc_do(tong_hop_muc_do, bang_muc_do):
     cot2.metric("Scratches", tong_hop_muc_do.get("num_scratches", 0))
     cot3.metric("Cracks", tong_hop_muc_do.get("num_cracks", 0))
 
+    cot1, cot2, cot3 = st.columns(3)
+    cot1.metric("Lamp Broken", tong_hop_muc_do.get("num_lamp_broken", 0))
+    cot2.metric("Tire Flat", tong_hop_muc_do.get("num_tire_flat", 0))
+    cot3.metric("Glass Broken", tong_hop_muc_do.get("num_glass_broken", 0))
+
     bang_tom_tat = [
         {"Metric": "Total damages", "Value": tong_hop_muc_do.get("total_damages", 0)},
         {"Metric": "Images classified by CNN", "Value": tong_hop_muc_do.get("total_images_classified", 0)},
         {"Metric": "Num dents", "Value": tong_hop_muc_do.get("num_dents", 0)},
         {"Metric": "Num scratches", "Value": tong_hop_muc_do.get("num_scratches", 0)},
         {"Metric": "Num cracks", "Value": tong_hop_muc_do.get("num_cracks", 0)},
+        {"Metric": "Num lamp broken", "Value": tong_hop_muc_do.get("num_lamp_broken", 0)},
+        {"Metric": "Num tire flat", "Value": tong_hop_muc_do.get("num_tire_flat", 0)},
+        {"Metric": "Num glass broken", "Value": tong_hop_muc_do.get("num_glass_broken", 0)},
         {"Metric": "Max severity", "Value": tong_hop_muc_do.get("max_severity", "none")},
         {
             "Metric": "Average severity score",

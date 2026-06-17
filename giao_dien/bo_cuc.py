@@ -2,7 +2,7 @@ import streamlit as st
 
 
 def chen_css_co_ban():
-    """Chèn CSS nhẹ để bố cục gọn gàng hơn."""
+    # Chèn CSS nhẹ để bố cục gọn gàng hơn.
     st.markdown(
         """
 <style>

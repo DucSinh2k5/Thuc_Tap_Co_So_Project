@@ -8,6 +8,14 @@ from torchvision.models import ConvNeXt_Tiny_Weights
 
 CAC_MUC_DO = ["minor", "moderate", "severe"]
 DIEM_MUC_DO = {"minor": 1, "moderate": 2, "severe": 3}
+KHOA_DEM_LOP_HU_HONG = {
+    "dent": "num_dents",
+    "scratch": "num_scratches",
+    "crack": "num_cracks",
+    "lamp_broken": "num_lamp_broken",
+    "tire_flat": "num_tire_flat",
+    "glass_broken": "num_glass_broken",
+}
 DUONG_DAN_MO_HINH = Path(__file__).resolve().parents[1] / "Models" / "ConvNeXt.pkl"
 THIET_BI = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BIEN_DOI_DANH_GIA = ConvNeXt_Tiny_Weights.DEFAULT.transforms()
@@ -99,7 +107,7 @@ def _du_doan_muc_do(mo_hinh, batch):
 
 
 def phan_loai_muc_do(danh_sach_anh):
-    """Du doan severity truc tiep tu anh full nguoi dung upload."""
+    # Du doan severity truc tiep tu anh full nguoi dung upload.
     if not danh_sach_anh:
         return []
 
@@ -141,21 +149,16 @@ def tong_hop_muc_do(danh_sach_phat_hien, danh_sach_muc_do):
     tong_hop = {
         "total_damages": len(danh_sach_phat_hien),
         "total_images_classified": len(danh_sach_muc_do),
-        "num_dents": 0,
-        "num_scratches": 0,
-        "num_cracks": 0,
+        **{khoa_dem: 0 for khoa_dem in KHOA_DEM_LOP_HU_HONG.values()},
         "max_severity": "none",
         "average_severity_score": 0.0,
     }
 
     for phat_hien in danh_sach_phat_hien:
         ten_lop = phat_hien.get("class", "")
-        if ten_lop == "dent":
-            tong_hop["num_dents"] += 1
-        if ten_lop == "scratch":
-            tong_hop["num_scratches"] += 1
-        if ten_lop == "crack":
-            tong_hop["num_cracks"] += 1
+        khoa_dem = KHOA_DEM_LOP_HU_HONG.get(ten_lop)
+        if khoa_dem:
+            tong_hop[khoa_dem] += 1
 
     if not danh_sach_muc_do:
         return tong_hop
